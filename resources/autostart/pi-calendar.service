@@ -1,0 +1,21 @@
+[Unit]
+Description=Pi Calendar
+After=graphical-session.target
+Wants=graphical-session.target
+
+[Service]
+Type=simple
+# Adjust the path to wherever you deployed the app on your Pi
+ExecStart=/home/pi/calendar/pi-calendar --no-sandbox
+Restart=on-failure
+RestartSec=5
+Environment=DISPLAY=:0
+# Set your Google credentials and weather config here
+Environment=GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+Environment=GOOGLE_CLIENT_SECRET=your-client-secret
+Environment=OPENWEATHER_API_KEY=your-api-key
+Environment=WEATHER_LAT=37.7749
+Environment=WEATHER_LON=-122.4194
+
+[Install]
+WantedBy=graphical-session.target

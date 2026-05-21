@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Pi Calendar
+Comment=Touchscreen calendar for Raspberry Pi
+Exec=/home/pi/calendar/pi-calendar --no-sandbox
+X-GNOME-Autostart-enabled=true
+Hidden=false
+NoDisplay=false

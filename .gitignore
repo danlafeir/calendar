@@ -1,0 +1,10 @@
+node_modules/
+out/
+dist/
+.env
+*.log
+
+# Pi deploy artifacts
+*.deb
+*.AppImage
+linux-arm64-unpacked/
