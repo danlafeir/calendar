@@ -19,10 +19,10 @@ function getNextEvent(events: CalendarEvent[]): CalendarEvent | null {
 
 function formatCountdown(minutesUntil: number): string {
   if (minutesUntil < 1) return 'now'
-  if (minutesUntil < 60) return `in ${minutesUntil}m`
+  if (minutesUntil < 60) return `${minutesUntil}m`
   const hours = Math.floor(minutesUntil / 60)
   const mins = minutesUntil % 60
-  return mins === 0 ? `in ${hours}h` : `in ${hours}h ${mins}m`
+  return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`
 }
 
 export function NextEventWidget() {
@@ -36,52 +36,45 @@ export function NextEventWidget() {
 
   const next = getNextEvent(events)
 
+  if (!next) {
+    return (
+      <div style={{ fontSize: 12, color: 'var(--color-text-faint)' }}>No more events today</div>
+    )
+  }
+
   return (
-    <div style={{ padding: '12px', borderBottom: '1px solid var(--color-border)' }}>
-      <div style={{ fontSize: 10, color: 'var(--color-text-faint)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-        Next up today
-      </div>
-      {!next ? (
-        <div style={{ fontSize: 12, color: 'var(--color-text-faint)' }}>No more events today</div>
-      ) : (
-        <div>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: 'var(--color-text)',
-              marginBottom: 4,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {next.title}
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
-              {format(parseISO(next.start), 'h:mm a')}
-            </span>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: 'var(--color-primary)',
-                backgroundColor: 'var(--color-primary-dim)',
-                borderRadius: 4,
-                padding: '2px 6px',
-              }}
-            >
-              {formatCountdown(differenceInMinutes(parseISO(next.start), now))}
-            </span>
-          </div>
-          {next.location && (
-            <div style={{ fontSize: 11, color: 'var(--color-text-faint)', marginTop: 3 }}>
-              📍 {next.location}
-            </div>
-          )}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 12, color: 'var(--color-text-faint)', marginBottom: 1 }}>
+          {format(parseISO(next.start), 'h:mm a')}
         </div>
-      )}
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: 'var(--color-text)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            maxWidth: 180,
+          }}
+        >
+          {next.title}
+        </div>
+      </div>
+      <span
+        style={{
+          flexShrink: 0,
+          fontSize: 11,
+          fontWeight: 600,
+          color: 'var(--color-primary)',
+          backgroundColor: 'var(--color-primary-dim)',
+          borderRadius: 4,
+          padding: '3px 7px',
+        }}
+      >
+        {formatCountdown(differenceInMinutes(parseISO(next.start), now))}
+      </span>
     </div>
   )
 }

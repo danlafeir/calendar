@@ -13,6 +13,32 @@ function conditionEmoji(code: number): string {
   return '🌡'
 }
 
+export function WeatherCompact() {
+  const { weather, isStale } = useWeatherStore()
+
+  if (!weather) return null
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        lineHeight: 1.2,
+        flexShrink: 0,
+        opacity: isStale ? 0.5 : 1,
+      }}
+    >
+      <div style={{ fontSize: 15, fontWeight: 500, fontVariantNumeric: 'tabular-nums', color: 'var(--color-text)' }}>
+        {conditionEmoji(weather.conditionCode)} {weather.temp}°
+      </div>
+      <div style={{ fontSize: 10, color: 'var(--color-text-faint)', textTransform: 'capitalize', whiteSpace: 'nowrap' }}>
+        {weather.condition}
+      </div>
+    </div>
+  )
+}
+
 export function WeatherWidget() {
   const { weather, isLoading, isStale } = useWeatherStore()
 

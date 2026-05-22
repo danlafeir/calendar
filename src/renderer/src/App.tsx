@@ -5,9 +5,7 @@ import { useCalendarSync } from '@renderer/hooks/useCalendarSync'
 import { useNotifications } from '@renderer/hooks/useNotifications'
 import { NavBar } from '@renderer/components/NavBar'
 import { AuthScreen } from '@renderer/components/AuthScreen'
-import { ClockWidget } from '@renderer/components/widgets/ClockWidget'
-import { WeatherWidget } from '@renderer/components/widgets/WeatherWidget'
-import { NextEventWidget } from '@renderer/components/widgets/NextEventWidget'
+import { Drawer } from '@renderer/components/Drawer'
 import { WeekView } from '@renderer/views/WeekView'
 import { MonthView } from '@renderer/views/MonthView'
 import { DayView } from '@renderer/views/DayView'
@@ -30,7 +28,7 @@ export function App() {
       .catch(() => setAuthState('unauthenticated'))
   }, [])
 
-  useCalendarSync()
+  useCalendarSync(authState === 'authenticated')
   useNotifications()
 
   if (authState === 'checking') {
@@ -46,35 +44,15 @@ export function App() {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
-      {/* Left sidebar */}
-      <div
-        style={{
-          width: 'var(--sidebar-width)',
-          flexShrink: 0,
-          borderRight: '1px solid var(--color-border)',
-          backgroundColor: 'var(--color-surface)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflowY: 'auto',
-        }}
-      >
-        <ClockWidget />
-        <WeatherWidget />
-        <NextEventWidget />
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      <NavBar />
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        {activeView === 'week' && <WeekView />}
+        {activeView === 'month' && <MonthView />}
+        {activeView === 'day' && <DayView />}
       </div>
 
-      {/* Main content */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <NavBar />
-        <div style={{ flex: 1, overflow: 'hidden' }}>
-          {activeView === 'week' && <WeekView />}
-          {activeView === 'month' && <MonthView />}
-          {activeView === 'day' && <DayView />}
-        </div>
-      </div>
-
-      {/* Modals */}
+      <Drawer />
       <EventModal />
       <ConfirmDeleteModal />
       <NotificationModal />

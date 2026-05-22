@@ -9,6 +9,7 @@ interface StoreSchema {
   tokensFallback: string
   notifyConfigs: Record<string, NotifyConfig>
   weatherCache: { data: WeatherData; fetchedAt: number } | null
+  selectedCalendarIds: string[] | null
   settings: {
     weatherLat: number
     weatherLon: number
@@ -23,6 +24,7 @@ const store = new Store<StoreSchema>({
     tokensFallback: '',
     notifyConfigs: {},
     weatherCache: null,
+    selectedCalendarIds: null,
     settings: {
       weatherLat: parseFloat(process.env.WEATHER_LAT ?? '37.7749'),
       weatherLon: parseFloat(process.env.WEATHER_LON ?? '-122.4194'),
@@ -88,6 +90,14 @@ export function getWeatherCache(): { data: WeatherData; fetchedAt: number } | nu
 
 export function setWeatherCache(data: WeatherData): void {
   store.set('weatherCache', { data, fetchedAt: Date.now() })
+}
+
+export function getSelectedCalendarIds(): string[] | null {
+  return store.get('selectedCalendarIds')
+}
+
+export function setSelectedCalendarIds(ids: string[] | null): void {
+  store.set('selectedCalendarIds', ids)
 }
 
 export function getSettings(): StoreSchema['settings'] {

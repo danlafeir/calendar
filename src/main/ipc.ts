@@ -1,9 +1,9 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '../types/ipc'
 import { startOAuthFlow, isAuthenticated, getAuthEmail, signOut } from './auth'
-import { getEvents, createEvent, updateEvent, deleteEvent } from './calendar'
+import { getEvents, createEvent, updateEvent, deleteEvent, getCalendars } from './calendar'
 import { getWeather, fetchAndCache } from './weather'
-import { getNotifyConfig, setNotifyConfig, getSettings } from './store'
+import { getNotifyConfig, setNotifyConfig, getSettings, getSelectedCalendarIds, setSelectedCalendarIds } from './store'
 import { updateEventCache, startScheduler } from './notifications'
 
 let backgroundSyncInterval: ReturnType<typeof setInterval> | null = null
@@ -46,6 +46,19 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle(IPC_CHANNELS.CALENDAR_DELETE_EVENT, async (_, { id }) => {
     await deleteEvent(id)
+    await syncCalendar(mainWindow)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.CALENDAR_GET_CALENDARS, async () => {
+    return getCalendars()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.STORE_GET_SELECTED_CALENDARS, () => {
+    return getSelectedCalendarIds()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.STORE_SET_SELECTED_CALENDARS, async (_, ids: string[] | null) => {
+    setSelectedCalendarIds(ids)
     await syncCalendar(mainWindow)
   })
 

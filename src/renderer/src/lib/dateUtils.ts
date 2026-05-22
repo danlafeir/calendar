@@ -45,7 +45,7 @@ export {
 }
 
 export const MINS_IN_DAY = 24 * 60
-export const PX_PER_MINUTE = 1.5
+export const PX_PER_MINUTE = 0.9
 
 export function minutesFromMidnight(date: Date): number {
   return getHours(date) * 60 + getMinutes(date)

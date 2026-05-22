@@ -23,6 +23,12 @@ button {
   border: none;
   background: none;
   color: inherit;
+  /* Remove 300ms tap delay on touch devices */
+  touch-action: manipulation;
+}
+
+button:active {
+  opacity: 0.7;
 }
 
 input, textarea, select {
@@ -34,26 +40,36 @@ input, textarea, select {
   border-radius: var(--radius-sm);
   padding: 8px 12px;
   outline: none;
+  /* Larger touch target for inputs */
+  min-height: 44px;
 }
 
 input:focus, textarea:focus, select:focus {
   border-color: var(--color-primary);
 }
 
-/* Scrollbar styling */
+/* Scrollbar — wide enough to grab with a finger */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 14px;
+  height: 14px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--color-surface);
 }
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
-  border-radius: 3px;
+  border-radius: 7px;
+  /* Inset border creates visual padding without shrinking the hit target */
+  border: 3px solid var(--color-surface);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-faint);
+}
+::-webkit-scrollbar-thumb:active {
+  background: var(--color-text-muted);
 }
 
-/* Touch action — prevent pull-to-refresh on touch devices */
+/* Touch — prevent pull-to-refresh */
 body {
   touch-action: pan-x pan-y;
   overscroll-behavior: none;

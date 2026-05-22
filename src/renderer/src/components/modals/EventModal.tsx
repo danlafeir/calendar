@@ -97,7 +97,7 @@ export function EventModal() {
         const updated = await ipc().updateEvent({ ...editingEvent, title: title.trim(), description, location, start, end, allDay })
         await ipc().setNotifyConfig({ eventId: updated.id, config: notifyConfig })
       } else {
-        const created = await ipc().createEvent({ title: title.trim(), description, location, start, end, allDay })
+        const created = await ipc().createEvent({ title: title.trim(), description, location, start, end, allDay, calendarId: 'primary' })
         await ipc().setNotifyConfig({ eventId: created.id, config: notifyConfig })
       }
       closeEventModal()

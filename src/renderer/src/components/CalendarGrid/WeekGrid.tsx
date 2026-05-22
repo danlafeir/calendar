@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react'
 import { format, isToday, isSameDay, parseISO } from 'date-fns'
 import { useCalendarStore } from '@renderer/store/useCalendarStore'
 import { useUIStore } from '@renderer/store/useUIStore'
+import { useVisibleEvents } from '@renderer/hooks/useVisibleEvents'
 import {
   getWeekDays,
   minutesFromMidnight,
@@ -60,7 +61,8 @@ function layoutEvents(events: CalendarEvent[]): Map<string, { colIdx: number; co
 }
 
 export function WeekGrid() {
-  const { events, selectedDate } = useCalendarStore()
+  const { selectedDate } = useCalendarStore()
+  const events = useVisibleEvents()
   const { openNewEvent, openEditEvent } = useUIStore()
   const gridRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -71,88 +73,141 @@ export function WeekGrid() {
   useEffect(() => {
     if (scrollRef.current) {
       const nowMins = minutesFromMidnight(new Date())
-      const target = nowMins * PX_PER_MINUTE - 300
-      scrollRef.current.scrollTop = Math.max(0, target)
+      const indicatorPx = nowMins * PX_PER_MINUTE
+      const halfViewport = scrollRef.current.clientHeight / 2
+      scrollRef.current.scrollTop = Math.max(0, indicatorPx - halfViewport)
     }
   }, [])
 
   useTouchGestures(gridRef as React.RefObject<HTMLElement>)
 
-  const allDayEvents = events.filter((e) => e.allDay && days.some((d) => isSameDay(parseISO(e.start), d)))
+  const allDayEvents = events.filter(
+    (e) => e.allDay && days.some((d) => isSameDay(parseISO(e.start), d)),
+  )
 
   return (
-    <div ref={gridRef} style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      {/* Day headers */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--color-border)', flexShrink: 0 }}>
-        <div style={{ width: TIME_COL_WIDTH, flexShrink: 0 }} />
-        {days.map((day) => (
-          <div
-            key={day.toISOString()}
-            style={{
-              flex: 1,
-              textAlign: 'center',
-              padding: '10px 4px 8px',
-              borderLeft: '1px solid var(--color-border-subtle)',
-              backgroundColor: isToday(day) ? 'var(--color-today-bg)' : 'transparent',
-            }}
-          >
-            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              {format(day, 'EEE')}
-            </div>
+    <div ref={gridRef} style={{ height: '100%', overflow: 'hidden' }}>
+      {/* Single scroll container — header is sticky inside it so columns always align */}
+      <div ref={scrollRef} style={{ height: '100%', overflowY: 'auto' }}>
+
+        {/* Sticky day headers */}
+        <div
+          style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 20,
+            display: 'flex',
+            borderBottom: '1px solid var(--color-border)',
+            backgroundColor: 'var(--color-surface)',
+          }}
+        >
+          <div style={{ width: TIME_COL_WIDTH, flexShrink: 0 }} />
+          {days.map((day) => (
             <div
+              key={day.toISOString()}
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                marginTop: 2,
-                fontSize: 18,
-                fontWeight: isToday(day) ? 700 : 400,
-                color: isToday(day) ? '#fff' : 'var(--color-text)',
-                backgroundColor: isToday(day) ? 'var(--color-primary)' : 'transparent',
+                flex: 1,
+                textAlign: 'center',
+                padding: '10px 4px 8px',
+                borderLeft: '1px solid var(--color-border-subtle)',
+                backgroundColor: isToday(day) ? 'var(--color-today-bg)' : 'transparent',
               }}
             >
-              {format(day, 'd')}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* All-day events row */}
-      {allDayEvents.length > 0 && (
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--color-border)', flexShrink: 0, minHeight: 28 }}>
-          <div style={{ width: TIME_COL_WIDTH, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 8 }}>
-            <span style={{ fontSize: 10, color: 'var(--color-text-faint)' }}>all day</span>
-          </div>
-          {days.map((day) => {
-            const dayAllDay = allDayEvents.filter((e) => isSameDay(parseISO(e.start), day))
-            return (
-              <div key={day.toISOString()} style={{ flex: 1, padding: '2px', borderLeft: '1px solid var(--color-border-subtle)', minHeight: 28 }}>
-                {dayAllDay.map((e) => (
-                  <button
-                    key={e.id}
-                    onClick={() => openEditEvent(e)}
-                    style={{
-                      display: 'block', width: '100%', textAlign: 'left',
-                      backgroundColor: 'var(--color-primary-dim)', color: 'var(--color-primary)',
-                      borderRadius: 3, padding: '1px 4px', fontSize: 11, marginBottom: 1,
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {e.title}
-                  </button>
-                ))}
+              <div
+                style={{
+                  fontSize: 11,
+                  color: 'var(--color-text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
+                {format(day, 'EEE')}
               </div>
-            )
-          })}
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  marginTop: 2,
+                  fontSize: 18,
+                  fontWeight: isToday(day) ? 700 : 400,
+                  color: isToday(day) ? '#fff' : 'var(--color-text)',
+                  backgroundColor: isToday(day) ? 'var(--color-primary)' : 'transparent',
+                }}
+              >
+                {format(day, 'd')}
+              </div>
+            </div>
+          ))}
         </div>
-      )}
 
-      {/* Scrollable time grid */}
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', position: 'relative' }}>
-        <div style={{ display: 'flex', height: `${gridHeight}px` }}>
+        {/* All-day events row */}
+        {allDayEvents.length > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              borderBottom: '1px solid var(--color-border)',
+              minHeight: 28,
+              backgroundColor: 'var(--color-surface)',
+            }}
+          >
+            <div
+              style={{
+                width: TIME_COL_WIDTH,
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                paddingRight: 8,
+              }}
+            >
+              <span style={{ fontSize: 10, color: 'var(--color-text-faint)' }}>all day</span>
+            </div>
+            {days.map((day) => {
+              const dayAllDay = allDayEvents.filter((e) => isSameDay(parseISO(e.start), day))
+              return (
+                <div
+                  key={day.toISOString()}
+                  style={{
+                    flex: 1,
+                    padding: '2px',
+                    borderLeft: '1px solid var(--color-border-subtle)',
+                    minHeight: 28,
+                  }}
+                >
+                  {dayAllDay.map((e) => (
+                    <button
+                      key={e.id}
+                      onClick={() => openEditEvent(e)}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        textAlign: 'left',
+                        backgroundColor: 'var(--color-primary-dim)',
+                        color: 'var(--color-primary)',
+                        borderRadius: 3,
+                        padding: '1px 4px',
+                        fontSize: 11,
+                        marginBottom: 1,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {e.title}
+                    </button>
+                  ))}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Time grid */}
+        <div style={{ display: 'flex', height: `${gridHeight}px`, position: 'relative' }}>
           {/* Time axis */}
           <div style={{ width: TIME_COL_WIDTH, flexShrink: 0, position: 'relative' }}>
             {HOURS.map((hour) => (
@@ -206,7 +261,6 @@ export function WeekGrid() {
                   openNewEvent(clickDate)
                 }}
               >
-                {/* Hour grid lines */}
                 {HOURS.map((hour) => (
                   <div
                     key={hour}
@@ -215,13 +269,12 @@ export function WeekGrid() {
                       top: `${hour * 60 * PX_PER_MINUTE}px`,
                       left: 0,
                       right: 0,
-                      height: '1px',
+                      height: 1,
                       backgroundColor: 'var(--color-border-subtle)',
                       pointerEvents: 'none',
                     }}
                   />
                 ))}
-                {/* Half-hour lines */}
                 {HOURS.map((hour) => (
                   <div
                     key={`${hour}-half`}
@@ -230,7 +283,7 @@ export function WeekGrid() {
                       top: `${(hour * 60 + 30) * PX_PER_MINUTE}px`,
                       left: 0,
                       right: 0,
-                      height: '1px',
+                      height: 1,
                       backgroundColor: 'var(--color-border-subtle)',
                       opacity: 0.4,
                       pointerEvents: 'none',
@@ -238,7 +291,6 @@ export function WeekGrid() {
                   />
                 ))}
 
-                {/* Events */}
                 {dayEvents.map((event) => {
                   const info = layout.get(event.id) ?? { colIdx: 0, colCount: 1 }
                   return (
@@ -247,18 +299,15 @@ export function WeekGrid() {
                       event={event}
                       columnIndex={info.colIdx}
                       columnCount={info.colCount}
-                      onClick={(ev) => {
-                        openEditEvent(ev)
-                      }}
+                      onClick={openEditEvent}
                     />
                   )
                 })}
 
-                {/* Current time indicator */}
-                {isCurrentDay && <TimeIndicator />}
               </div>
             )
           })}
+          {days.some((d) => isToday(d)) && <TimeIndicator />}
         </div>
       </div>
     </div>

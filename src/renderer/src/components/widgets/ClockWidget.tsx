@@ -5,32 +5,20 @@ export function ClockWidget() {
   const [now, setNow] = useState(() => new Date())
 
   useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), 1000)
+    const interval = setInterval(() => setNow(new Date()), 60_000)
     return () => clearInterval(interval)
   }, [])
 
   return (
-    <div style={{ padding: '16px 12px 12px', borderBottom: '1px solid var(--color-border)' }}>
-      <div
-        style={{
-          fontSize: 52,
-          fontWeight: 300,
-          letterSpacing: '-0.02em',
-          color: 'var(--color-text)',
-          lineHeight: 1,
-          fontVariantNumeric: 'tabular-nums',
-        }}
-      >
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.2 }}>
+      <div style={{ fontSize: 20, fontWeight: 500, fontVariantNumeric: 'tabular-nums', color: 'var(--color-text)' }}>
         {format(now, 'h:mm')}
-        <span style={{ fontSize: 28, color: 'var(--color-text-muted)', marginLeft: 4 }}>
+        <span style={{ fontSize: 13, color: 'var(--color-text-muted)', marginLeft: 3 }}>
           {format(now, 'a')}
         </span>
       </div>
-      <div style={{ marginTop: 6, color: 'var(--color-text-muted)', fontSize: 13 }}>
-        {format(now, 'EEEE, MMMM d')}
-      </div>
-      <div style={{ marginTop: 2, color: 'var(--color-text-faint)', fontSize: 11, fontVariantNumeric: 'tabular-nums' }}>
-        {format(now, 'ss')}s
+      <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+        {format(now, 'EEE, MMM d')}
       </div>
     </div>
   )

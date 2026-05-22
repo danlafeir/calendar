@@ -2,6 +2,7 @@ import { useRef, useEffect } from 'react'
 import { format, isToday, isSameDay, parseISO } from 'date-fns'
 import { useCalendarStore } from '@renderer/store/useCalendarStore'
 import { useUIStore } from '@renderer/store/useUIStore'
+import { useVisibleEvents } from '@renderer/hooks/useVisibleEvents'
 import {
   minutesFromMidnight,
   totalGridHeight,
@@ -15,7 +16,8 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const TIME_COL_WIDTH = 56
 
 export function DayGrid() {
-  const { events, selectedDate } = useCalendarStore()
+  const { selectedDate } = useCalendarStore()
+  const events = useVisibleEvents()
   const { openNewEvent, openEditEvent } = useUIStore()
   const gridRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -27,7 +29,9 @@ export function DayGrid() {
   useEffect(() => {
     if (scrollRef.current) {
       const nowMins = minutesFromMidnight(new Date())
-      scrollRef.current.scrollTop = Math.max(0, nowMins * PX_PER_MINUTE - 300)
+      const indicatorPx = nowMins * PX_PER_MINUTE
+      const halfViewport = scrollRef.current.clientHeight / 2
+      scrollRef.current.scrollTop = Math.max(0, indicatorPx - halfViewport)
     }
   }, [])
 
@@ -74,7 +78,7 @@ export function DayGrid() {
       )}
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto' }}>
-        <div style={{ display: 'flex', height: `${gridHeight}px` }}>
+        <div style={{ display: 'flex', height: `${gridHeight}px`, position: 'relative' }}>
           {/* Time axis */}
           <div style={{ width: TIME_COL_WIDTH, flexShrink: 0, position: 'relative' }}>
             {HOURS.map((hour) => (
@@ -126,8 +130,8 @@ export function DayGrid() {
             {dayEvents.map((event) => (
               <EventBlock key={event.id} event={event} onClick={openEditEvent} />
             ))}
-            {isCurrent && <TimeIndicator />}
           </div>
+          {isCurrent && <TimeIndicator />}
         </div>
       </div>
     </div>

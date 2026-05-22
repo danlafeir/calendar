@@ -2,13 +2,15 @@ import { useRef } from 'react'
 import { format, isToday, isSameDay, isSameMonth, parseISO } from 'date-fns'
 import { useCalendarStore } from '@renderer/store/useCalendarStore'
 import { useUIStore } from '@renderer/store/useUIStore'
+import { useVisibleEvents } from '@renderer/hooks/useVisibleEvents'
 import { getMonthDays, formatEventTime } from '@renderer/lib/dateUtils'
 import { useTouchGestures } from '@renderer/hooks/useTouchGestures'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export function MonthGrid() {
-  const { events, selectedDate, setSelectedDate, setActiveView } = useCalendarStore()
+  const { selectedDate, setSelectedDate, setActiveView } = useCalendarStore()
+  const events = useVisibleEvents()
   const { openNewEvent, openEditEvent } = useUIStore()
   const gridRef = useRef<HTMLDivElement>(null)
 
