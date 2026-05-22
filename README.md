@@ -66,7 +66,15 @@ Before first launch you need a Google OAuth **Desktop App** client.
 ## OpenWeatherMap API key
 
 1. Sign up at [openweathermap.org](https://openweathermap.org/api) — the free tier is enough
-2. Copy your API key into `.env`
+2. After signing up, go to **API keys** in your account dashboard and copy your default key (or generate a new one)
+3. Note: new API keys can take up to 2 hours to activate after sign-up
+4. Set your location coordinates in `.env` (decimal degrees — positive = North/East, negative = South/West)
+
+**Finding your coordinates:**
+- Search your city on [Google Maps](https://maps.google.com), right-click your location, and the first line of the context menu shows `lat, lon`
+- Or use [latlong.net](https://www.latlong.net)
+
+The weather widget displays in the top navigation bar showing the current temperature and condition (e.g. `☀️ 72°` / `clear sky`). Data is cached for 10 minutes. If the API key is missing or invalid, the widget is hidden rather than showing an error.
 
 ---
 
@@ -86,7 +94,8 @@ GOOGLE_CLIENT_SECRET=GOCSPX-xxxxx
 # OpenWeatherMap free-tier key
 OPENWEATHER_API_KEY=xxxxx
 
-# Your location for weather
+# Your location for weather (decimal degrees)
+# Example: San Francisco
 WEATHER_LAT=37.7749
 WEATHER_LON=-122.4194
 ```
