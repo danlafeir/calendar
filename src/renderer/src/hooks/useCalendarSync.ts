@@ -7,7 +7,7 @@ import { startOfMonth, subMonths, addMonths, endOfMonth } from 'date-fns'
 import { viewRange } from '@renderer/lib/viewRange'
 
 export function useCalendarSync(authenticated: boolean): void {
-  const activeView = useCalendarStore((s) => s.activeView)
+  const applySync = useCalendarStore((s) => s.applySync)
   const setWeather = useWeatherStore((s) => s.setWeather)
   const setStale = useWeatherStore((s) => s.setStale)
   const setCalendars = useSettingsStore((s) => s.setCalendars)
