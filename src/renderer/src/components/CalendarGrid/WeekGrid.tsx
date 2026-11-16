@@ -10,6 +10,8 @@ import {
   totalGridHeight,
   PX_PER_MINUTE,
 } from '@renderer/lib/dateUtils'
+import { eventColor, tint } from '@renderer/lib/eventColor'
+import { useSettingsStore } from '@renderer/store/useSettingsStore'
 import { occursOnDay } from '@renderer/lib/eventSpan'
 import { useTouchGestures } from '@renderer/hooks/useTouchGestures'
 import { EventBlock } from './EventBlock'
@@ -65,6 +67,7 @@ function layoutEvents(events: CalendarEvent[]): Map<string, { colIdx: number; co
 export function WeekGrid() {
   const { selectedDate } = useCalendarStore()
   const events = useVisibleEvents()
+  const calendars = useSettingsStore((s) => s.calendars)
   const { openNewEvent, openEditEvent } = useUIStore()
   const gridRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -188,8 +191,8 @@ export function WeekGrid() {
                         display: 'block',
                         width: '100%',
                         textAlign: 'left',
-                        backgroundColor: 'var(--color-primary-dim)',
-                        color: 'var(--color-primary)',
+                        backgroundColor: tint(eventColor(e, calendars)),
+                        color: eventColor(e, calendars),
                         borderRadius: 3,
                         padding: '1px 4px',
                         fontSize: 11,

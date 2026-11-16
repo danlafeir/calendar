@@ -1,21 +1,8 @@
 import type { CalendarEvent } from '@renderer/types'
 import { eventTop, eventHeight, formatEventTime } from '@renderer/lib/dateUtils'
+import { eventColor } from '@renderer/lib/eventColor'
+import { useSettingsStore } from '@renderer/store/useSettingsStore'
 import { clipToDay } from '@renderer/lib/eventSpan'
-
-const COLOR_MAP: Record<string, string> = {
-  '1': '#a8c7fa',
-  '2': '#81c995',
-  '3': '#f28b82',
-  '4': '#d4a8f7',
-  '5': '#fbbc04',
-  '6': '#78d9ec',
-  '7': '#ff8bcb',
-  '8': '#e8eaed',
-  '9': '#aecbfa',
-  '10': '#ccff90',
-  '11': '#e6c9a8',
-}
-const DEFAULT_COLOR = '#58a6ff'
 
 interface EventBlockProps {
   event: CalendarEvent
@@ -26,12 +13,13 @@ interface EventBlockProps {
 }
 
 export function EventBlock({ event, columnIndex = 0, columnCount = 1, day, onClick }: EventBlockProps) {
+  const calendars = useSettingsStore((s) => s.calendars)
   const clipped = day ? clipToDay(event, day) : null
   const startIso = clipped ? clipped.start.toISOString() : event.start
   const endIso = clipped ? clipped.end.toISOString() : event.end
   const top = eventTop(startIso)
   const height = eventHeight(startIso, endIso)
-  const color = COLOR_MAP[event.colorId ?? ''] ?? DEFAULT_COLOR
+  const color = eventColor(event, calendars)
   const colWidth = 100 / columnCount
   const left = colWidth * columnIndex
 

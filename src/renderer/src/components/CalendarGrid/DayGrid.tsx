@@ -9,6 +9,8 @@ import {
   totalGridHeight,
   PX_PER_MINUTE,
 } from '@renderer/lib/dateUtils'
+import { eventColor, tint } from '@renderer/lib/eventColor'
+import { useSettingsStore } from '@renderer/store/useSettingsStore'
 import { occursOnDay } from '@renderer/lib/eventSpan'
 import { useTouchGestures } from '@renderer/hooks/useTouchGestures'
 import { EventBlock } from './EventBlock'
@@ -20,6 +22,7 @@ const TIME_COL_WIDTH = 56
 export function DayGrid() {
   const { selectedDate } = useCalendarStore()
   const events = useVisibleEvents()
+  const calendars = useSettingsStore((s) => s.calendars)
   const { openNewEvent, openEditEvent } = useUIStore()
   const gridRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -69,7 +72,7 @@ export function DayGrid() {
               key={eventKey(e)}
               onClick={() => openEditEvent(e)}
               style={{
-                backgroundColor: 'var(--color-primary-dim)', color: 'var(--color-primary)',
+                backgroundColor: tint(eventColor(e, calendars)), color: eventColor(e, calendars),
                 borderRadius: 3, padding: '2px 8px', fontSize: 12,
               }}
             >

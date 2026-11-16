@@ -7,6 +7,9 @@ interface SettingsState {
   calendars: CalendarInfo[]
   // null means "all selected"
   selectedCalendarIds: Set<string> | null
+  // quick client-side filter to one calendar (one calendar per person)
+  focusedCalendarId: string | null
+  setFocusedCalendarId: (id: string | null) => void
   prefs: AppSettings
   setPrefs: (prefs: AppSettings) => void
   openDrawer: () => void
@@ -20,6 +23,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   isDrawerOpen: false,
   calendars: [],
   selectedCalendarIds: null,
+  focusedCalendarId: null,
+  setFocusedCalendarId: (focusedCalendarId) => set({ focusedCalendarId }),
   prefs: DEFAULT_APP_SETTINGS,
   setPrefs: (prefs) => set({ prefs }),
   openDrawer: () => set({ isDrawerOpen: true }),

@@ -3,6 +3,7 @@ import { ipc } from '@renderer/lib/ipc'
 import { useCalendarStore } from '@renderer/store/useCalendarStore'
 import { useCalendarSync, useVisibleRangeSync } from '@renderer/hooks/useCalendarSync'
 import { useNotifications } from '@renderer/hooks/useNotifications'
+import { PersonChips } from '@renderer/components/PersonChips'
 import { NavBar } from '@renderer/components/NavBar'
 import { AuthScreen } from '@renderer/components/AuthScreen'
 import { AmbientScreen } from '@renderer/components/AmbientScreen'
@@ -54,6 +55,7 @@ export function App() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
       <NavBar />
+      <PersonChips />
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {activeView === 'week' && <WeekView />}
         {activeView === 'month' && <MonthView />}

@@ -5,6 +5,8 @@ import { useCalendarStore } from '@renderer/store/useCalendarStore'
 import { useUIStore } from '@renderer/store/useUIStore'
 import { useVisibleEvents } from '@renderer/hooks/useVisibleEvents'
 import { getMonthDays, formatEventTime } from '@renderer/lib/dateUtils'
+import { eventColor, tint } from '@renderer/lib/eventColor'
+import { useSettingsStore } from '@renderer/store/useSettingsStore'
 import { occursOnDay, compareForDay } from '@renderer/lib/eventSpan'
 import { useTouchGestures } from '@renderer/hooks/useTouchGestures'
 
@@ -14,6 +16,7 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 export function MonthGrid() {
   const { selectedDate, setSelectedDate, setActiveView } = useCalendarStore()
   const events = useVisibleEvents()
+  const calendars = useSettingsStore((s) => s.calendars)
   const { openNewEvent, openEditEvent } = useUIStore()
   const gridRef = useRef<HTMLDivElement>(null)
 
@@ -90,8 +93,8 @@ export function MonthGrid() {
                     display: 'block',
                     width: '100%',
                     textAlign: 'left',
-                    backgroundColor: 'var(--color-primary-dim)',
-                    color: 'var(--color-primary)',
+                    backgroundColor: tint(eventColor(event, calendars)),
+                    color: eventColor(event, calendars),
                     borderRadius: 3,
                     padding: '1px 5px',
                     fontSize: 11,

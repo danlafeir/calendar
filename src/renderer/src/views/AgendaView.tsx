@@ -6,12 +6,15 @@ import { useTouchGestures } from '@renderer/hooks/useTouchGestures'
 import { AGENDA_DAYS } from '@renderer/lib/viewRange'
 import { compareForDay, occursOnDay } from '@renderer/lib/eventSpan'
 import { formatEventTime } from '@renderer/lib/dateUtils'
+import { eventColor } from '@renderer/lib/eventColor'
+import { useSettingsStore } from '@renderer/store/useSettingsStore'
 import { eventKey } from '@renderer/types'
 import { useRef } from 'react'
 
 export function AgendaView() {
   const selectedDate = useCalendarStore((s) => s.selectedDate)
   const events = useVisibleEvents()
+  const calendars = useSettingsStore((s) => s.calendars)
   const { openEditEvent, openNewEvent } = useUIStore()
   const ref = useRef<HTMLDivElement>(null)
   useTouchGestures(ref as React.RefObject<HTMLElement>)
@@ -56,6 +59,7 @@ export function AgendaView() {
                     padding: '10px 14px',
                     borderRadius: 'var(--radius-md)',
                     backgroundColor: 'var(--color-surface-elevated)',
+                    borderLeft: `4px solid ${eventColor(e, calendars)}`,
                     minHeight: 44,
                   }}
                 >

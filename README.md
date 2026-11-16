@@ -9,6 +9,7 @@ A fullscreen touchscreen calendar app for Raspberry Pi. Syncs with Google Calend
 ## Features
 
 - **Week view** (default) with current day highlighted and a live time-of-day indicator
+- **Per-person colors and filter**: events use their calendar's color (unless the event has its own), and when you show two or more calendars a chip row appears under the top bar — tap a person's chip to see only their calendar, tap again to show everyone. Treat each family member as a calendar.
 - **Agenda view**: a large-type list of the next 7 days (swipe or use the arrows to move by a week)
 - Month and day views, swipe left/right to navigate. Multi-day and overnight events span every day they cover; busy month cells show "+N more", which opens that day
 - Google Calendar sync — create, edit, and delete events that sync back to Google. New events can go on any calendar you have write access to; read-only calendars (e.g. holidays) can't be edited but still support local alerts. Events you have declined are hidden.

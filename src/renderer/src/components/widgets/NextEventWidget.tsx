@@ -9,7 +9,7 @@ export function getNextEvent(events: CalendarEvent[]): CalendarEvent | null {
   return (
     events
       .filter((e) => {
-        if (e.allDay) return false
+        if (e.allDay || e.declined) return false
         const start = parseISO(e.start)
         return isAfter(start, now) && isBefore(start, eod)
       })
