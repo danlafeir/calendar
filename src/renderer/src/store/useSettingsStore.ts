@@ -1,11 +1,14 @@
 import { create } from 'zustand'
-import type { CalendarInfo } from '@renderer/types'
+import { DEFAULT_APP_SETTINGS } from '@renderer/types'
+import type { AppSettings, CalendarInfo } from '@renderer/types'
 
 interface SettingsState {
   isDrawerOpen: boolean
   calendars: CalendarInfo[]
   // null means "all selected"
   selectedCalendarIds: Set<string> | null
+  prefs: AppSettings
+  setPrefs: (prefs: AppSettings) => void
   openDrawer: () => void
   closeDrawer: () => void
   setCalendars: (calendars: CalendarInfo[]) => void
@@ -17,6 +20,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   isDrawerOpen: false,
   calendars: [],
   selectedCalendarIds: null,
+  prefs: DEFAULT_APP_SETTINGS,
+  setPrefs: (prefs) => set({ prefs }),
   openDrawer: () => set({ isDrawerOpen: true }),
   closeDrawer: () => set({ isDrawerOpen: false }),
   setCalendars: (calendars) => set({ calendars }),

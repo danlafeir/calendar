@@ -5,6 +5,7 @@ import { useCalendarSync, useVisibleRangeSync } from '@renderer/hooks/useCalenda
 import { useNotifications } from '@renderer/hooks/useNotifications'
 import { NavBar } from '@renderer/components/NavBar'
 import { AuthScreen } from '@renderer/components/AuthScreen'
+import { NightDim } from '@renderer/components/NightDim'
 import { Drawer } from '@renderer/components/Drawer'
 import { WeekView } from '@renderer/views/WeekView'
 import { MonthView } from '@renderer/views/MonthView'
@@ -59,6 +60,7 @@ export function App() {
       <EventModal />
       <ConfirmDeleteModal />
       <NotificationModal />
+      <NightDim />
     </div>
   )
 }

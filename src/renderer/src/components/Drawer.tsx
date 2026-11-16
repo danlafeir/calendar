@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { ipc } from '@renderer/lib/ipc'
+import { DisplaySettings } from '@renderer/components/DisplaySettings'
 import { useSettingsStore } from '@renderer/store/useSettingsStore'
 
 export function Drawer() {
@@ -189,6 +190,8 @@ export function Drawer() {
               </button>
             )
           })}
+
+          <DisplaySettings />
         </div>
       </div>
     </>

@@ -2,7 +2,8 @@ import { safeStorage, app } from 'electron'
 import Store from 'electron-store'
 import { chmod } from 'fs/promises'
 import { join } from 'path'
-import type { WeatherData, NotifyConfig } from '../types/ipc'
+import { DEFAULT_APP_SETTINGS } from '../types/ipc'
+import type { WeatherData, NotifyConfig, AppSettings } from '../types/ipc'
 
 interface StoreSchema {
   encryptedTokens: string
@@ -15,6 +16,7 @@ interface StoreSchema {
     weatherLon: number
     syncIntervalMs: number
   }
+  appSettings: Partial<AppSettings>
 }
 
 const store = new Store<StoreSchema>({
@@ -25,6 +27,7 @@ const store = new Store<StoreSchema>({
     notifyConfigs: {},
     weatherCache: null,
     selectedCalendarIds: null,
+    appSettings: {},
     settings: {
       weatherLat: parseFloat(process.env.WEATHER_LAT ?? '37.7749'),
       weatherLon: parseFloat(process.env.WEATHER_LON ?? '-122.4194'),
@@ -123,6 +126,16 @@ export function getSelectedCalendarIds(): string[] | null {
 
 export function setSelectedCalendarIds(ids: string[] | null): void {
   store.set('selectedCalendarIds', ids)
+}
+
+// Stored partially so settings added later fall back to defaults for existing installs
+export function getAppSettings(): AppSettings {
+  return { ...DEFAULT_APP_SETTINGS, ...store.get('appSettings') }
+}
+
+export function updateAppSettings(patch: Partial<AppSettings>): AppSettings {
+  store.set('appSettings', { ...store.get('appSettings'), ...patch })
+  return getAppSettings()
 }
 
 export function getSettings(): StoreSchema['settings'] {

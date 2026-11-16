@@ -4,7 +4,8 @@ import { startOAuthFlow, isAuthenticated, getAuthEmail, signOut } from './auth'
 import { getEvents, createEvent, updateEvent, deleteEvent, getCalendars, clearCalendarCache } from './calendar'
 import { defaultRange, unionRange, rangesEqual, type SyncRange } from './syncRange'
 import { getWeather, fetchAndCache } from './weather'
-import { getNotifyConfig, setNotifyConfig, getSettings, getSelectedCalendarIds, setSelectedCalendarIds, pruneNotifyConfigs } from './store'
+import { getNotifyConfig, setNotifyConfig, getSettings, getSelectedCalendarIds, setSelectedCalendarIds, pruneNotifyConfigs, getAppSettings, updateAppSettings } from './store'
+import { sanitizeSettingsPatch } from './settingsValidation'
 import { updateEventCache, startScheduler } from './notifications'
 
 let backgroundSyncInterval: ReturnType<typeof setInterval> | null = null
@@ -71,6 +72,12 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     setSelectedCalendarIds(ids)
     await syncCalendar(mainWindow)
   })
+
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, () => getAppSettings())
+
+  ipcMain.handle(IPC_CHANNELS.SETTINGS_UPDATE, (_, patch) =>
+    updateAppSettings(sanitizeSettingsPatch(patch)),
+  )
 
   ipcMain.handle(IPC_CHANNELS.WEATHER_GET, async () => {
     return getWeather()

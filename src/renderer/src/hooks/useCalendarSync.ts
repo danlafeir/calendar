@@ -11,6 +11,7 @@ export function useCalendarSync(authenticated: boolean): void {
   const setWeather = useWeatherStore((s) => s.setWeather)
   const setStale = useWeatherStore((s) => s.setStale)
   const setCalendars = useSettingsStore((s) => s.setCalendars)
+  const setPrefs = useSettingsStore((s) => s.setPrefs)
   const setSelectedCalendarIds = useSettingsStore((s) => s.setSelectedCalendarIds)
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export function useCalendarSync(authenticated: boolean): void {
           else setStale(true)
         })
         .catch(() => setStale(true))
+      ipc().getAppSettings().then(setPrefs).catch(() => {})
       ipc().getCalendars().then(setCalendars).catch(() => {})
       ipc().getSelectedCalendars().then(setSelectedCalendarIds).catch(() => {})
     }
@@ -41,7 +43,7 @@ export function useCalendarSync(authenticated: boolean): void {
       unsubCalendar()
       unsubWeather()
     }
-  }, [authenticated, applySync, setWeather, setStale, setCalendars, setSelectedCalendarIds])
+  }, [authenticated, applySync, setWeather, setStale, setCalendars, setPrefs, setSelectedCalendarIds])
 }
 
 // Tell main which range is on screen so navigating far from today still has

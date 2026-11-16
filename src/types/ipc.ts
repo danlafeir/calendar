@@ -43,6 +43,24 @@ export interface WeatherData {
   fetchedAt: number
 }
 
+export interface AppSettings {
+  // minutes of no touch before ambient mode starts; 0 disables it
+  idleTimeoutMin: number
+  nightStart: string
+  nightEnd: string
+  // 0 disables night dimming
+  nightDimPercent: number
+  units: 'imperial' | 'metric'
+}
+
+export const DEFAULT_APP_SETTINGS: AppSettings = {
+  idleTimeoutMin: 5,
+  nightStart: '22:00',
+  nightEnd: '06:00',
+  nightDimPercent: 60,
+  units: 'imperial',
+}
+
 export interface SyncPayload {
   // null when the whole sync failed; the renderer keeps what it already has
   events: CalendarEvent[] | null
@@ -79,6 +97,8 @@ export const IPC_CHANNELS = {
   NOTIFICATION_REMINDER: 'notification:reminder',
   CALENDAR_SYNCED: 'calendar:synced',
   CALENDAR_SET_RANGE: 'calendar:setRange',
+  SETTINGS_GET: 'settings:get',
+  SETTINGS_UPDATE: 'settings:update',
   WEATHER_UPDATED: 'weather:updated',
 } as const
 
@@ -88,6 +108,8 @@ export interface ElectronAPI {
   updateEvent: (event: CalendarEvent) => Promise<CalendarEvent>
   deleteEvent: (params: { id: string; calendarId: string }) => Promise<void>
   getCalendars: () => Promise<CalendarInfo[]>
+  getAppSettings: () => Promise<AppSettings>
+  updateAppSettings: (patch: Partial<AppSettings>) => Promise<AppSettings>
   setVisibleRange: (range: { timeMin: string; timeMax: string }) => Promise<void>
   startOAuth: () => Promise<{ success: boolean }>
   getAuthStatus: () => Promise<{ authenticated: boolean; email?: string }>

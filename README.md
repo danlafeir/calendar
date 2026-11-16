@@ -19,6 +19,20 @@ A fullscreen touchscreen calendar app for Raspberry Pi. Syncs with Google Calend
 
 ---
 
+## Display settings
+
+Open the menu (☰) and scroll to the bottom of the drawer. Settings are stored locally on the device.
+
+| Setting | Default | Notes |
+|---|---|---|
+| Screensaver after | 5 min | Off, 2, 5, 10 or 30 minutes of no touch |
+| Night dimming | 60% | Off, 30, 60 or 90% black overlay |
+| Night window | 22:00 – 06:00 | May wrap past midnight |
+
+Dimming is a software overlay, so it works on any display without hardware backlight access.
+
+---
+
 ## Sync behavior
 
 - Events are fetched for the previous month through ~3 months ahead, plus whatever date range you are currently viewing, so browsing far from today still shows events.
