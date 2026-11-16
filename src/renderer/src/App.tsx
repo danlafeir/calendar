@@ -9,6 +9,7 @@ import { Drawer } from '@renderer/components/Drawer'
 import { WeekView } from '@renderer/views/WeekView'
 import { MonthView } from '@renderer/views/MonthView'
 import { DayView } from '@renderer/views/DayView'
+import { AgendaView } from '@renderer/views/AgendaView'
 import { EventModal } from '@renderer/components/modals/EventModal'
 import { NotificationModal } from '@renderer/components/modals/NotificationModal'
 import { ConfirmDeleteModal } from '@renderer/components/modals/ConfirmDeleteModal'
@@ -51,6 +52,7 @@ export function App() {
         {activeView === 'week' && <WeekView />}
         {activeView === 'month' && <MonthView />}
         {activeView === 'day' && <DayView />}
+        {activeView === 'agenda' && <AgendaView />}
       </div>
 
       <Drawer />

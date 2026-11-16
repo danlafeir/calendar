@@ -1,4 +1,5 @@
-import { format, startOfWeek, endOfWeek } from 'date-fns'
+import { addDays, format, startOfWeek, endOfWeek } from 'date-fns'
+import { AGENDA_DAYS } from '@renderer/lib/viewRange'
 import { useCalendarStore, type CalendarView } from '@renderer/store/useCalendarStore'
 import { useSettingsStore } from '@renderer/store/useSettingsStore'
 import { ClockWidget } from '@renderer/components/widgets/ClockWidget'
@@ -10,6 +11,7 @@ const VIEWS: { key: CalendarView; label: string }[] = [
   { key: 'week', label: 'Week' },
   { key: 'month', label: 'Month' },
   { key: 'day', label: 'Day' },
+  { key: 'agenda', label: 'Agenda' },
 ]
 
 function getDateRangeLabel(view: CalendarView, date: Date): string {
@@ -20,6 +22,9 @@ function getDateRangeLabel(view: CalendarView, date: Date): string {
       return `${format(start, 'MMM d')} – ${format(end, 'd, yyyy')}`
     }
     return `${format(start, 'MMM d')} – ${format(end, 'MMM d, yyyy')}`
+  }
+  if (view === 'agenda') {
+    return `${format(date, 'MMM d')} – ${format(addDays(date, AGENDA_DAYS - 1), 'MMM d, yyyy')}`
   }
   if (view === 'month') return format(date, 'MMMM yyyy')
   return format(date, 'EEEE, MMMM d, yyyy')

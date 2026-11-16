@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { addWeeks, subWeeks, addMonths, subMonths, addDays, subDays } from 'date-fns'
 import type { CalendarEvent, SyncPayload } from '@renderer/types'
 
-export type CalendarView = 'week' | 'month' | 'day'
+export type CalendarView = 'week' | 'month' | 'day' | 'agenda'
 
 interface SyncStatus {
   lastSyncedAt: number | null
@@ -47,7 +47,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
   navigateForward: () => {
     const { selectedDate, activeView } = get()
     const next =
-      activeView === 'week'
+      activeView === 'week' || activeView === 'agenda'
         ? addWeeks(selectedDate, 1)
         : activeView === 'month'
           ? addMonths(selectedDate, 1)
@@ -58,7 +58,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
   navigateBackward: () => {
     const { selectedDate, activeView } = get()
     const prev =
-      activeView === 'week'
+      activeView === 'week' || activeView === 'agenda'
         ? subWeeks(selectedDate, 1)
         : activeView === 'month'
           ? subMonths(selectedDate, 1)

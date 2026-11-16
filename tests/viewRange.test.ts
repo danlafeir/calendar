@@ -15,4 +15,9 @@ describe('viewRange', () => {
     expect(new Date(r.timeMin).getDate()).toBe(15)
     expect(new Date(r.timeMax).getDate()).toBe(15)
   })
+  it('agenda view covers seven days from the selected date', () => {
+    const r = viewRange('agenda', d)
+    expect(new Date(r.timeMin).getDate()).toBe(15)
+    expect(new Date(r.timeMax).getDate()).toBe(21)
+  })
 })
