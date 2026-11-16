@@ -13,6 +13,7 @@ A fullscreen touchscreen calendar app for Raspberry Pi. Syncs with Google Calend
 - Google Calendar sync — create, edit, and delete events that sync back to Google. New events can go on any calendar you have write access to; read-only calendars (e.g. holidays) can't be edited but still support local alerts. Events you have declined are hidden.
 - **Sidebar widgets**: live clock, current weather (OpenWeatherMap), next event today with countdown
 - Per-event notifications: configurable minutes-before alerts, optional chime sound
+  - Alerts missed by up to 5 minutes (e.g. after the Pi wakes from sleep) still fire; older ones are dropped. Alerts are skipped for events that already started, all-day events, and events you declined.
 - Fullscreen kiosk mode on Pi, normal window in dev
 
 ---

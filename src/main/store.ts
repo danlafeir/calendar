@@ -83,8 +83,30 @@ export function getNotifyConfig(key: string, legacyId?: string): NotifyConfig {
 
 export function setNotifyConfig(key: string, config: NotifyConfig): void {
   const configs = store.get('notifyConfigs')
-  configs[key] = config
+  configs[key] = { ...config, savedAt: Date.now() }
   store.set('notifyConfigs', configs)
+}
+
+const CONFIG_RETENTION_MS = 365 * 24 * 60 * 60 * 1000
+
+// Drops configs for events that are no longer synced and were saved over a
+// year ago. Configs without a timestamp (saved before pruning existed) are
+// stamped now so they get the full grace period instead of being dropped.
+export function pruneNotifyConfigs(liveKeys: Set<string>): void {
+  const configs = store.get('notifyConfigs')
+  const now = Date.now()
+  let changed = false
+  for (const [key, config] of Object.entries(configs)) {
+    if (liveKeys.has(key)) continue
+    if (config.savedAt === undefined) {
+      config.savedAt = now
+      changed = true
+    } else if (now - config.savedAt > CONFIG_RETENTION_MS) {
+      delete configs[key]
+      changed = true
+    }
+  }
+  if (changed) store.set('notifyConfigs', configs)
 }
 
 export function getWeatherCache(): { data: WeatherData; fetchedAt: number } | null {

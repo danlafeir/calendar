@@ -2,10 +2,16 @@ import type { BrowserWindow } from 'electron'
 import type { CalendarEvent } from '../types/ipc'
 import { getNotifyConfig } from './store'
 import { IPC_CHANNELS, eventKey } from '../types/ipc'
+import { dueReminders, windowStart } from './reminders'
+
+const TICK_MS = 30_000
+const FIRED_RETENTION_MS = 24 * 60 * 60 * 1000
 
 let cachedEvents: CalendarEvent[] = []
 let schedulerInterval: ReturnType<typeof setInterval> | null = null
-const firedKeys = new Set<string>()
+let lastTick = Date.now()
+// key -> fire time, so entries can be pruned by age without re-looking-up events
+const firedKeys = new Map<string, number>()
 
 export function updateEventCache(events: CalendarEvent[]): void {
   cachedEvents = events
@@ -13,7 +19,8 @@ export function updateEventCache(events: CalendarEvent[]): void {
 
 export function startScheduler(mainWindow: BrowserWindow): void {
   stopScheduler()
-  schedulerInterval = setInterval(() => tick(mainWindow), 30_000)
+  lastTick = Date.now()
+  schedulerInterval = setInterval(() => tick(mainWindow), TICK_MS)
 }
 
 export function stopScheduler(): void {
@@ -25,33 +32,25 @@ export function stopScheduler(): void {
 
 function tick(mainWindow: BrowserWindow): void {
   const now = Date.now()
-  const windowStart = now - 30_000
-  const windowEnd = now
+  const due = dueReminders(
+    cachedEvents,
+    (event) => getNotifyConfig(eventKey(event), event.id),
+    windowStart(lastTick, now),
+    now,
+  )
+  lastTick = now
 
-  for (const event of cachedEvents) {
-    if (event.allDay || event.declined) continue
-    const config = getNotifyConfig(eventKey(event), event.id)
-    for (const minutesBefore of config.minutesBefore) {
-      const fireAt = new Date(event.start).getTime() - minutesBefore * 60_000
-      const key = `${eventKey(event)}|${minutesBefore}`
-      if (fireAt >= windowStart && fireAt < windowEnd && !firedKeys.has(key)) {
-        firedKeys.add(key)
-        mainWindow.webContents.send(IPC_CHANNELS.NOTIFICATION_REMINDER, {
-          event,
-          minutesBefore,
-          soundEnabled: config.soundEnabled,
-        })
-      }
-    }
+  for (const reminder of due) {
+    if (firedKeys.has(reminder.key)) continue
+    firedKeys.set(reminder.key, reminder.fireAt)
+    mainWindow.webContents.send(IPC_CHANNELS.NOTIFICATION_REMINDER, {
+      event: reminder.event,
+      minutesBefore: reminder.minutesBefore,
+      soundEnabled: reminder.soundEnabled,
+    })
   }
 
-  // Prune fired keys older than 1 day to prevent unbounded growth
-  const cutoff = now - 24 * 60 * 60 * 1000
-  for (const key of firedKeys) {
-    const [evKey] = key.split('|')
-    const event = cachedEvents.find((e) => eventKey(e) === evKey)
-    if (!event || new Date(event.start).getTime() < cutoff) {
-      firedKeys.delete(key)
-    }
+  for (const [key, fireAt] of firedKeys) {
+    if (fireAt < now - FIRED_RETENTION_MS) firedKeys.delete(key)
   }
 }

@@ -53,6 +53,7 @@ export interface SyncPayload {
 export interface NotifyConfig {
   minutesBefore: number[]
   soundEnabled: boolean
+  savedAt?: number
 }
 
 export interface NotificationPayload {

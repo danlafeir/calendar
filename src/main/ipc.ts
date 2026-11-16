@@ -1,10 +1,10 @@
 import { ipcMain, BrowserWindow } from 'electron'
-import { IPC_CHANNELS } from '../types/ipc'
+import { IPC_CHANNELS, eventKey } from '../types/ipc'
 import { startOAuthFlow, isAuthenticated, getAuthEmail, signOut } from './auth'
 import { getEvents, createEvent, updateEvent, deleteEvent, getCalendars, clearCalendarCache } from './calendar'
 import { defaultRange, unionRange, rangesEqual, type SyncRange } from './syncRange'
 import { getWeather, fetchAndCache } from './weather'
-import { getNotifyConfig, setNotifyConfig, getSettings, getSelectedCalendarIds, setSelectedCalendarIds } from './store'
+import { getNotifyConfig, setNotifyConfig, getSettings, getSelectedCalendarIds, setSelectedCalendarIds, pruneNotifyConfigs } from './store'
 import { updateEventCache, startScheduler } from './notifications'
 
 let backgroundSyncInterval: ReturnType<typeof setInterval> | null = null
@@ -99,6 +99,7 @@ async function syncCalendar(mainWindow: BrowserWindow): Promise<void> {
     const { timeMin, timeMax } = unionRange(defaultRange(new Date()), visibleRange)
     const { events, failedCalendarIds } = await getEvents(timeMin, timeMax)
     updateEventCache(events)
+    pruneNotifyConfigs(new Set(events.map(eventKey)))
     mainWindow.webContents.send(IPC_CHANNELS.CALENDAR_SYNCED, {
       events,
       failedCalendarIds,
