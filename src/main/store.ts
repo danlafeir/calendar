@@ -4,6 +4,7 @@ import { chmod } from 'fs/promises'
 import { join } from 'path'
 import { DEFAULT_APP_SETTINGS } from '../types/ipc'
 import { MAX_NOTIFY_KEYS } from './notifyValidation'
+import { secretStatus } from './secretBackend'
 import { randomUUID } from 'crypto'
 import type { WeatherData, NotifyConfig, AppSettings, HomeData } from '../types/ipc'
 
@@ -19,7 +20,7 @@ interface StoreSchema {
     syncIntervalMs: number
   }
   appSettings: Partial<AppSettings>
-  icsSources: IcsSource[]
+  icsSources: StoredIcsSource[]
   homeData: HomeData
 }
 
@@ -31,8 +32,21 @@ export interface IcsSource {
   color: string
 }
 
+// Exactly one of url (plain text, no OS encryption available) or urlEnc
+// (base64 safeStorage ciphertext) is set
+interface StoredIcsSource {
+  id: string
+  name: string
+  color: string
+  url?: string
+  urlEnc?: string
+}
+
+// configFileMode: conf rewrites the file atomically on every save, which would
+// otherwise reset it to the default 0666 and undo a one-off chmod
 const store = new Store<StoreSchema>({
   name: 'pi-calendar',
+  configFileMode: 0o600,
   defaults: {
     encryptedTokens: '',
     tokensFallback: '',
@@ -50,7 +64,16 @@ const store = new Store<StoreSchema>({
   },
 })
 
-// Protect the store file on disk when safeStorage is unavailable
+export function secretStorage() {
+  const linux = process.platform === 'linux'
+  return secretStatus(
+    process.platform,
+    safeStorage.isEncryptionAvailable(),
+    linux ? safeStorage.getSelectedStorageBackend() : null,
+  )
+}
+
+// Tightens a store file created before configFileMode was set
 export async function lockStorePermissions(): Promise<void> {
   try {
     const storePath = join(app.getPath('userData'), 'pi-calendar.json')
@@ -62,7 +85,7 @@ export async function lockStorePermissions(): Promise<void> {
 
 export function saveTokens(tokens: Record<string, unknown>): void {
   const json = JSON.stringify(tokens)
-  if (safeStorage.isEncryptionAvailable()) {
+  if (secretStorage().protected) {
     store.set('encryptedTokens', safeStorage.encryptString(json).toString('base64'))
     store.set('tokensFallback', '')
   } else {
@@ -162,22 +185,46 @@ export function setHomeData(data: HomeData): void {
 
 const ICS_COLORS = ['#f2994a', '#bb6bd9', '#27ae60', '#eb5757', '#56ccf2', '#f2c94c']
 
+function protectUrl(url: string): Pick<StoredIcsSource, 'url' | 'urlEnc'> {
+  return secretStorage().protected
+    ? { urlEnc: safeStorage.encryptString(url).toString('base64') }
+    : { url }
+}
+
+// An undecryptable URL (keyring locked, or the store was copied to another
+// machine) yields '' so the feed stays listed, fails its sync visibly and can be removed
+function revealUrl(s: StoredIcsSource): string {
+  if (s.url !== undefined) return s.url
+  try {
+    return s.urlEnc ? safeStorage.decryptString(Buffer.from(s.urlEnc, 'base64')) : ''
+  } catch {
+    return ''
+  }
+}
+
 export function getIcsSources(): IcsSource[] {
-  return store.get('icsSources')
+  return store.get('icsSources').map((s) => ({ id: s.id, name: s.name, color: s.color, url: revealUrl(s) }))
+}
+
+// Feeds saved before URLs were encrypted: re-save them protected
+export function protectStoredIcsSources(): void {
+  if (!secretStorage().protected) return
+  const sources = store.get('icsSources')
+  if (!sources.some((s) => s.url !== undefined)) return
+  store.set(
+    'icsSources',
+    sources.map((s) => (s.url === undefined ? s : { id: s.id, name: s.name, color: s.color, ...protectUrl(s.url) })),
+  )
 }
 
 export const MAX_ICS_SOURCES = 20
 
 export function addIcsSource(name: string, url: string): IcsSource {
   const sources = store.get('icsSources')
-  const source: IcsSource = {
-    id: randomUUID(),
-    name,
-    url,
-    color: ICS_COLORS[sources.length % ICS_COLORS.length],
-  }
-  store.set('icsSources', [...sources, source])
-  return source
+  const id = randomUUID()
+  const color = ICS_COLORS[sources.length % ICS_COLORS.length]
+  store.set('icsSources', [...sources, { id, name, color, ...protectUrl(url) }])
+  return { id, name, url, color }
 }
 
 export function removeIcsSource(id: string): void {

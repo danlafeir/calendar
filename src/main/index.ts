@@ -3,7 +3,7 @@ import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { createWindow } from './window'
 import { registerIpcHandlers } from './ipc'
-import { lockStorePermissions } from './store'
+import { lockStorePermissions, protectStoredIcsSources, secretStorage } from './store'
 
 // Load .env for development
 const envPath = join(process.cwd(), '.env')
@@ -21,6 +21,9 @@ if (existsSync(envPath)) {
 
 app.on('ready', async () => {
   await lockStorePermissions()
+  const secrets = secretStorage()
+  if (secrets.protected) protectStoredIcsSources()
+  else console.warn(`Secret storage: ${secrets.description}`)
   const mainWindow = createWindow()
   // Register IPC handlers before the page loads so renderer invoke calls don't race
   registerIpcHandlers(mainWindow)
