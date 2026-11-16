@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { format, parseISO } from 'date-fns'
 import { useUIStore } from '@renderer/store/useUIStore'
 import { ipc } from '@renderer/lib/ipc'
+import { useSettingsStore } from '@renderer/store/useSettingsStore'
+import { canWrite, eventKey } from '@renderer/types'
 import type { NotifyConfig } from '@renderer/types'
 
 const NOTIFY_PRESETS = [5, 10, 15, 30, 60]
@@ -50,6 +52,11 @@ export function EventModal() {
     minutesBefore: [10],
     soundEnabled: true,
   })
+  const calendars = useSettingsStore((s) => s.calendars)
+  const writable = calendars.filter((c) => canWrite(c.accessRole))
+  const defaultCalendarId = (writable.find((c) => c.primary) ?? writable[0])?.id ?? 'primary'
+  const [calendarId, setCalendarId] = useState(defaultCalendarId)
+  const readOnly = !!editingEvent?.readOnly
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -63,10 +70,11 @@ export function EventModal() {
     setEndTime(initEndTime)
     setAllDay(editingEvent?.allDay ?? false)
     setError('')
+    setCalendarId(defaultCalendarId)
 
     if (editingEvent) {
       ipc()
-        .getNotifyConfig({ eventId: editingEvent.id })
+        .getNotifyConfig({ eventKey: eventKey(editingEvent) })
         .then(setNotifyConfig)
         .catch(console.error)
     } else {
@@ -93,12 +101,14 @@ export function EventModal() {
       const start = allDay ? `${date}T00:00:00.000Z` : buildIso(date, startTime)
       const end = allDay ? `${date}T23:59:59.000Z` : buildIso(date, endTime)
 
-      if (isEditing && editingEvent) {
+      if (isEditing && editingEvent && readOnly) {
+        await ipc().setNotifyConfig({ eventKey: eventKey(editingEvent), config: notifyConfig })
+      } else if (isEditing && editingEvent) {
         const updated = await ipc().updateEvent({ ...editingEvent, title: title.trim(), description, location, start, end, allDay })
-        await ipc().setNotifyConfig({ eventId: updated.id, config: notifyConfig })
+        await ipc().setNotifyConfig({ eventKey: eventKey(updated), config: notifyConfig })
       } else {
-        const created = await ipc().createEvent({ title: title.trim(), description, location, start, end, allDay, calendarId: 'primary' })
-        await ipc().setNotifyConfig({ eventId: created.id, config: notifyConfig })
+        const created = await ipc().createEvent({ title: title.trim(), description, location, start, end, allDay, calendarId })
+        await ipc().setNotifyConfig({ eventKey: eventKey(created), config: notifyConfig })
       }
       closeEventModal()
     } catch (err) {
@@ -132,6 +142,20 @@ export function EventModal() {
             style={{ fontSize: 16, padding: '12px 14px' }}
             autoFocus
           />
+
+          {readOnly && (
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+              This calendar is read-only. You can still change alerts for this event.
+            </div>
+          )}
+
+          {!isEditing && writable.length > 1 && (
+            <select value={calendarId} onChange={(e) => setCalendarId(e.target.value)}>
+              {writable.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <input type="checkbox" id="allday" checked={allDay} onChange={(e) => setAllDay(e.target.checked)} />
@@ -209,9 +233,9 @@ export function EventModal() {
           {error && <div style={{ color: '#f85149', fontSize: 13 }}>{error}</div>}
 
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
-            {isEditing && (
+            {isEditing && !readOnly && (
               <button
-                onClick={() => openDeleteConfirm(editingEvent!.id)}
+                onClick={() => openDeleteConfirm(editingEvent!)}
                 style={{ color: '#da3633', fontSize: 14, padding: '12px 16px', marginRight: 'auto' }}
               >
                 Delete
@@ -228,7 +252,7 @@ export function EventModal() {
               disabled={saving}
               style={{ backgroundColor: 'var(--color-primary)', color: '#fff', borderRadius: 'var(--radius-md)', padding: '12px 28px', fontSize: 14, fontWeight: 600, opacity: saving ? 0.7 : 1 }}
             >
-              {saving ? 'Saving…' : isEditing ? 'Update' : 'Create'}
+              {saving ? 'Saving…' : readOnly ? 'Save alerts' : isEditing ? 'Update' : 'Create'}
             </button>
           </div>
         </div>

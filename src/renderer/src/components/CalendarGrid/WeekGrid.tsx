@@ -1,3 +1,4 @@
+import { eventKey } from '@renderer/types'
 import { useRef, useEffect } from 'react'
 import { format, isToday, isSameDay, parseISO } from 'date-fns'
 import { useCalendarStore } from '@renderer/store/useCalendarStore'
@@ -31,30 +32,30 @@ function layoutEvents(events: CalendarEvent[]): Map<string, { colIdx: number; co
       const last = columns[col][columns[col].length - 1]
       if (new Date(last.end).getTime() <= eStart) {
         columns[col].push(event)
-        layout.set(event.id, { colIdx: col, colCount: 1 })
+        layout.set(eventKey(event), { colIdx: col, colCount: 1 })
         placed = true
         break
       }
     }
     if (!placed) {
       columns.push([event])
-      layout.set(event.id, { colIdx: columns.length - 1, colCount: 1 })
+      layout.set(eventKey(event), { colIdx: columns.length - 1, colCount: 1 })
     }
   }
 
   for (const event of sorted) {
     const eStart = new Date(event.start).getTime()
     const eEnd = new Date(event.end).getTime()
-    let maxCol = layout.get(event.id)!.colIdx
+    let maxCol = layout.get(eventKey(event))!.colIdx
     for (const other of sorted) {
-      if (other.id === event.id) continue
+      if (eventKey(other) === eventKey(event)) continue
       const oStart = new Date(other.start).getTime()
       const oEnd = new Date(other.end).getTime()
       if (oStart < eEnd && oEnd > eStart) {
-        maxCol = Math.max(maxCol, layout.get(other.id)!.colIdx)
+        maxCol = Math.max(maxCol, layout.get(eventKey(other))!.colIdx)
       }
     }
-    layout.get(event.id)!.colCount = maxCol + 1
+    layout.get(eventKey(event))!.colCount = maxCol + 1
   }
 
   return layout
@@ -180,7 +181,7 @@ export function WeekGrid() {
                 >
                   {dayAllDay.map((e) => (
                     <button
-                      key={e.id}
+                      key={eventKey(e)}
                       onClick={() => openEditEvent(e)}
                       style={{
                         display: 'block',
@@ -292,10 +293,10 @@ export function WeekGrid() {
                 ))}
 
                 {dayEvents.map((event) => {
-                  const info = layout.get(event.id) ?? { colIdx: 0, colCount: 1 }
+                  const info = layout.get(eventKey(event)) ?? { colIdx: 0, colCount: 1 }
                   return (
                     <EventBlock
-                      key={event.id}
+                      key={eventKey(event)}
                       event={event}
                       columnIndex={info.colIdx}
                       columnCount={info.colCount}

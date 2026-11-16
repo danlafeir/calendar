@@ -1,3 +1,4 @@
+import { eventKey } from '@renderer/types'
 import { useRef, useEffect } from 'react'
 import { format, isToday, isSameDay, parseISO } from 'date-fns'
 import { useCalendarStore } from '@renderer/store/useCalendarStore'
@@ -64,7 +65,7 @@ export function DayGrid() {
         <div style={{ display: 'flex', borderBottom: '1px solid var(--color-border)', padding: '4px 8px 4px 72px', gap: 4, flexShrink: 0 }}>
           {allDayEvents.map((e) => (
             <button
-              key={e.id}
+              key={eventKey(e)}
               onClick={() => openEditEvent(e)}
               style={{
                 backgroundColor: 'var(--color-primary-dim)', color: 'var(--color-primary)',
@@ -128,7 +129,7 @@ export function DayGrid() {
             ))}
 
             {dayEvents.map((event) => (
-              <EventBlock key={event.id} event={event} onClick={openEditEvent} />
+              <EventBlock key={eventKey(event)} event={event} onClick={openEditEvent} />
             ))}
           </div>
           {isCurrent && <TimeIndicator />}

@@ -73,14 +73,17 @@ export function clearTokens(): void {
   store.set('tokensFallback', '')
 }
 
-export function getNotifyConfig(eventId: string): NotifyConfig {
+// legacyId: configs saved before keys became calendarId:id were keyed by bare event id
+export function getNotifyConfig(key: string, legacyId?: string): NotifyConfig {
   const configs = store.get('notifyConfigs')
-  return configs[eventId] ?? { minutesBefore: [10], soundEnabled: true }
+  return (
+    configs[key] ?? (legacyId ? configs[legacyId] : undefined) ?? { minutesBefore: [10], soundEnabled: true }
+  )
 }
 
-export function setNotifyConfig(eventId: string, config: NotifyConfig): void {
+export function setNotifyConfig(key: string, config: NotifyConfig): void {
   const configs = store.get('notifyConfigs')
-  configs[eventId] = config
+  configs[key] = config
   store.set('notifyConfigs', configs)
 }
 

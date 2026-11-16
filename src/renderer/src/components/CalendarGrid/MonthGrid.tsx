@@ -1,3 +1,4 @@
+import { eventKey } from '@renderer/types'
 import { useRef } from 'react'
 import { format, isToday, isSameDay, isSameMonth, parseISO } from 'date-fns'
 import { useCalendarStore } from '@renderer/store/useCalendarStore'
@@ -81,7 +82,7 @@ export function MonthGrid() {
 
               {dayEvents.map((event) => (
                 <button
-                  key={event.id}
+                  key={eventKey(event)}
                   onClick={(e) => { e.stopPropagation(); openEditEvent(event) }}
                   style={{
                     display: 'block',

@@ -3,7 +3,8 @@ import { useSettingsStore } from '@renderer/store/useSettingsStore'
 import type { CalendarEvent } from '@renderer/types'
 
 export function useVisibleEvents(): CalendarEvent[] {
-  const events = useCalendarStore((s) => s.events)
+  const allEvents = useCalendarStore((s) => s.events)
+  const events = allEvents.filter((e) => !e.declined)
   const selectedCalendarIds = useSettingsStore((s) => s.selectedCalendarIds)
 
   if (selectedCalendarIds === null) return events

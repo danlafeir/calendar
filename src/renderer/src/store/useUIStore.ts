@@ -6,13 +6,13 @@ interface UIState {
   editingEvent: CalendarEvent | null
   newEventDate: Date | null
   isDeleteConfirmOpen: boolean
-  deletingEventId: string | null
+  deletingEvent: CalendarEvent | null
   notificationQueue: NotificationPayload[]
 
   openNewEvent: (date: Date) => void
   openEditEvent: (event: CalendarEvent) => void
   closeEventModal: () => void
-  openDeleteConfirm: (eventId: string) => void
+  openDeleteConfirm: (event: CalendarEvent) => void
   closeDeleteConfirm: () => void
   pushNotification: (payload: NotificationPayload) => void
   dismissNotification: () => void
@@ -23,15 +23,15 @@ export const useUIStore = create<UIState>((set, get) => ({
   editingEvent: null,
   newEventDate: null,
   isDeleteConfirmOpen: false,
-  deletingEventId: null,
+  deletingEvent: null,
   notificationQueue: [],
 
   openNewEvent: (date) => set({ isEventModalOpen: true, editingEvent: null, newEventDate: date }),
   openEditEvent: (event) => set({ isEventModalOpen: true, editingEvent: event, newEventDate: null }),
   closeEventModal: () => set({ isEventModalOpen: false, editingEvent: null, newEventDate: null }),
 
-  openDeleteConfirm: (eventId) => set({ isDeleteConfirmOpen: true, deletingEventId: eventId }),
-  closeDeleteConfirm: () => set({ isDeleteConfirmOpen: false, deletingEventId: null }),
+  openDeleteConfirm: (event) => set({ isDeleteConfirmOpen: true, deletingEvent: event }),
+  closeDeleteConfirm: () => set({ isDeleteConfirmOpen: false, deletingEvent: null }),
 
   pushNotification: (payload) =>
     set({ notificationQueue: [...get().notificationQueue, payload] }),

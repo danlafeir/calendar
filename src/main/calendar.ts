@@ -1,9 +1,14 @@
 import { google, calendar_v3 } from 'googleapis'
 import { getAuthenticatedClient } from './auth'
+import { canWrite } from '../types/ipc'
 import type { CalendarEvent, CalendarInfo } from '../types/ipc'
 import { getSelectedCalendarIds } from './store'
 
-function mapEvent(e: calendar_v3.Schema$Event, calendarId: string): CalendarEvent {
+function mapEvent(
+  e: calendar_v3.Schema$Event,
+  calendarId: string,
+  readOnly = false,
+): CalendarEvent {
   const start = e.start?.dateTime ?? e.start?.date ?? ''
   const end = e.end?.dateTime ?? e.end?.date ?? ''
   return {
@@ -16,6 +21,8 @@ function mapEvent(e: calendar_v3.Schema$Event, calendarId: string): CalendarEven
     allDay: !e.start?.dateTime,
     calendarId,
     colorId: e.colorId ?? undefined,
+    readOnly: readOnly || undefined,
+    declined: e.attendees?.some((a) => a.self && a.responseStatus === 'declined') || undefined,
     extendedProperties: e.extendedProperties
       ? { private: (e.extendedProperties.private as Record<string, string>) ?? undefined }
       : undefined,
@@ -31,6 +38,7 @@ export async function getCalendars(): Promise<CalendarInfo[]> {
     name: c.summary ?? c.id ?? '',
     color: c.backgroundColor ?? '#4285f4',
     primary: c.primary ?? false,
+    accessRole: c.accessRole ?? 'reader',
   }))
 }
 
@@ -43,7 +51,7 @@ export async function getEvents(timeMin: string, timeMax: string): Promise<Calen
   try {
     allCalendars = await getCalendars()
   } catch {
-    allCalendars = [{ id: 'primary', name: 'Primary', color: '#4285f4', primary: true }]
+    allCalendars = [{ id: 'primary', name: 'Primary', color: '#4285f4', primary: true, accessRole: 'owner' }]
   }
 
   const selectedIds = getSelectedCalendarIds()
@@ -62,44 +70,37 @@ export async function getEvents(timeMin: string, timeMax: string): Promise<Calen
           orderBy: 'startTime',
           maxResults: 500,
         })
-        .then((res) => (res.data.items ?? []).map((e) => mapEvent(e, calendar.id))),
+        .then((res) => (res.data.items ?? []).map((e) => mapEvent(e, calendar.id, !canWrite(calendar.accessRole)))),
     ),
   )
 
   return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []))
 }
 
+function eventTimes(event: Pick<CalendarEvent, 'start' | 'end' | 'allDay'>) {
+  if (event.allDay) {
+    return {
+      start: { date: event.start.split('T')[0], dateTime: null },
+      end: { date: event.end.split('T')[0], dateTime: null },
+    }
+  }
+  return {
+    start: { dateTime: event.start, date: null },
+    end: { dateTime: event.end, date: null },
+  }
+}
+
 export async function createEvent(event: Omit<CalendarEvent, 'id'>): Promise<CalendarEvent> {
   const auth = await getAuthenticatedClient()
   const cal = google.calendar({ version: 'v3', auth })
-  const res = await cal.events.insert({
-    calendarId: 'primary',
-    requestBody: {
-      summary: event.title,
-      description: event.description,
-      location: event.location,
-      start: event.allDay ? { date: event.start.split('T')[0] } : { dateTime: event.start },
-      end: event.allDay ? { date: event.end.split('T')[0] } : { dateTime: event.end },
-      colorId: event.colorId,
-      extendedProperties: event.extendedProperties,
-    },
-  })
-  return mapEvent(res.data, 'primary')
-}
-
-export async function updateEvent(event: CalendarEvent): Promise<CalendarEvent> {
-  const auth = await getAuthenticatedClient()
-  const cal = google.calendar({ version: 'v3', auth })
   const calendarId = event.calendarId || 'primary'
-  const res = await cal.events.update({
+  const res = await cal.events.insert({
     calendarId,
-    eventId: event.id,
     requestBody: {
       summary: event.title,
       description: event.description,
       location: event.location,
-      start: event.allDay ? { date: event.start.split('T')[0] } : { dateTime: event.start },
-      end: event.allDay ? { date: event.end.split('T')[0] } : { dateTime: event.end },
+      ...eventTimes(event),
       colorId: event.colorId,
       extendedProperties: event.extendedProperties,
     },
@@ -107,8 +108,28 @@ export async function updateEvent(event: CalendarEvent): Promise<CalendarEvent> 
   return mapEvent(res.data, calendarId)
 }
 
-export async function deleteEvent(id: string): Promise<void> {
+// patch, not update: update replaces the whole resource and would drop
+// attendees, recurrence and reminders that this app does not model.
+export async function updateEvent(event: CalendarEvent): Promise<CalendarEvent> {
   const auth = await getAuthenticatedClient()
   const cal = google.calendar({ version: 'v3', auth })
-  await cal.events.delete({ calendarId: 'primary', eventId: id })
+  const calendarId = event.calendarId || 'primary'
+  const res = await cal.events.patch({
+    calendarId,
+    eventId: event.id,
+    requestBody: {
+      summary: event.title,
+      description: event.description,
+      location: event.location,
+      ...eventTimes(event),
+      colorId: event.colorId,
+    },
+  })
+  return mapEvent(res.data, calendarId)
+}
+
+export async function deleteEvent(id: string, calendarId: string): Promise<void> {
+  const auth = await getAuthenticatedClient()
+  const cal = google.calendar({ version: 'v3', auth })
+  await cal.events.delete({ calendarId, eventId: id })
 }

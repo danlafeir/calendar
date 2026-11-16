@@ -1,7 +1,7 @@
 import type { BrowserWindow } from 'electron'
 import type { CalendarEvent } from '../types/ipc'
 import { getNotifyConfig } from './store'
-import { IPC_CHANNELS } from '../types/ipc'
+import { IPC_CHANNELS, eventKey } from '../types/ipc'
 
 let cachedEvents: CalendarEvent[] = []
 let schedulerInterval: ReturnType<typeof setInterval> | null = null
@@ -29,11 +29,11 @@ function tick(mainWindow: BrowserWindow): void {
   const windowEnd = now
 
   for (const event of cachedEvents) {
-    if (event.allDay) continue
-    const config = getNotifyConfig(event.id)
+    if (event.allDay || event.declined) continue
+    const config = getNotifyConfig(eventKey(event), event.id)
     for (const minutesBefore of config.minutesBefore) {
       const fireAt = new Date(event.start).getTime() - minutesBefore * 60_000
-      const key = `${event.id}:${minutesBefore}`
+      const key = `${eventKey(event)}|${minutesBefore}`
       if (fireAt >= windowStart && fireAt < windowEnd && !firedKeys.has(key)) {
         firedKeys.add(key)
         mainWindow.webContents.send(IPC_CHANNELS.NOTIFICATION_REMINDER, {
@@ -48,8 +48,8 @@ function tick(mainWindow: BrowserWindow): void {
   // Prune fired keys older than 1 day to prevent unbounded growth
   const cutoff = now - 24 * 60 * 60 * 1000
   for (const key of firedKeys) {
-    const [eventId] = key.split(':')
-    const event = cachedEvents.find((e) => e.id === eventId)
+    const [evKey] = key.split('|')
+    const event = cachedEvents.find((e) => eventKey(e) === evKey)
     if (!event || new Date(event.start).getTime() < cutoff) {
       firedKeys.delete(key)
     }

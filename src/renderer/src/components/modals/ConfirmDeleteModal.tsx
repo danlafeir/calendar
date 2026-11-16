@@ -3,15 +3,15 @@ import { useUIStore } from '@renderer/store/useUIStore'
 import { ipc } from '@renderer/lib/ipc'
 
 export function ConfirmDeleteModal() {
-  const { isDeleteConfirmOpen, deletingEventId, closeDeleteConfirm, closeEventModal } = useUIStore()
+  const { isDeleteConfirmOpen, deletingEvent, closeDeleteConfirm, closeEventModal } = useUIStore()
   const [deleting, setDeleting] = useState(false)
 
-  if (!isDeleteConfirmOpen || !deletingEventId) return null
+  if (!isDeleteConfirmOpen || !deletingEvent) return null
 
   const handleDelete = async () => {
     setDeleting(true)
     try {
-      await ipc().deleteEvent({ id: deletingEventId })
+      await ipc().deleteEvent({ id: deletingEvent.id, calendarId: deletingEvent.calendarId })
       closeDeleteConfirm()
       closeEventModal()
     } catch (err) {

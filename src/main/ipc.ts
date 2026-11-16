@@ -44,8 +44,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     return updated
   })
 
-  ipcMain.handle(IPC_CHANNELS.CALENDAR_DELETE_EVENT, async (_, { id }) => {
-    await deleteEvent(id)
+  ipcMain.handle(IPC_CHANNELS.CALENDAR_DELETE_EVENT, async (_, { id, calendarId }) => {
+    await deleteEvent(id, calendarId)
     await syncCalendar(mainWindow)
   })
 
@@ -66,12 +66,12 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     return getWeather()
   })
 
-  ipcMain.handle(IPC_CHANNELS.STORE_GET_NOTIFY_CONFIG, (_, { eventId }) => {
-    return getNotifyConfig(eventId)
+  ipcMain.handle(IPC_CHANNELS.STORE_GET_NOTIFY_CONFIG, (_, { eventKey }) => {
+    return getNotifyConfig(eventKey)
   })
 
-  ipcMain.handle(IPC_CHANNELS.STORE_SET_NOTIFY_CONFIG, (_, { eventId, config }) => {
-    setNotifyConfig(eventId, config)
+  ipcMain.handle(IPC_CHANNELS.STORE_SET_NOTIFY_CONFIG, (_, { eventKey, config }) => {
+    setNotifyConfig(eventKey, config)
   })
 
   // Start background services if already authenticated

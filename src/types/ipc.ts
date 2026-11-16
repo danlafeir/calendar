@@ -8,6 +8,8 @@ export interface CalendarEvent {
   allDay: boolean
   calendarId: string
   colorId?: string
+  readOnly?: boolean
+  declined?: boolean
   extendedProperties?: {
     private?: Record<string, string>
   }
@@ -18,6 +20,15 @@ export interface CalendarInfo {
   name: string
   color: string
   primary: boolean
+  accessRole: string
+}
+
+export function eventKey(event: Pick<CalendarEvent, 'calendarId' | 'id'>): string {
+  return `${event.calendarId}:${event.id}`
+}
+
+export function canWrite(accessRole: string): boolean {
+  return accessRole === 'owner' || accessRole === 'writer'
 }
 
 export interface WeatherData {
@@ -66,14 +77,14 @@ export interface ElectronAPI {
   getEvents: (params: { timeMin: string; timeMax: string }) => Promise<CalendarEvent[]>
   createEvent: (event: Omit<CalendarEvent, 'id'>) => Promise<CalendarEvent>
   updateEvent: (event: CalendarEvent) => Promise<CalendarEvent>
-  deleteEvent: (params: { id: string }) => Promise<void>
+  deleteEvent: (params: { id: string; calendarId: string }) => Promise<void>
   getCalendars: () => Promise<CalendarInfo[]>
   startOAuth: () => Promise<{ success: boolean }>
   getAuthStatus: () => Promise<{ authenticated: boolean; email?: string }>
   signOut: () => Promise<void>
   getWeather: () => Promise<WeatherData | null>
-  getNotifyConfig: (params: { eventId: string }) => Promise<NotifyConfig>
-  setNotifyConfig: (params: { eventId: string; config: NotifyConfig }) => Promise<void>
+  getNotifyConfig: (params: { eventKey: string }) => Promise<NotifyConfig>
+  setNotifyConfig: (params: { eventKey: string; config: NotifyConfig }) => Promise<void>
   getSelectedCalendars: () => Promise<string[] | null>
   setSelectedCalendars: (ids: string[] | null) => Promise<void>
   onNotificationReminder: (callback: (payload: NotificationPayload) => void) => () => void
