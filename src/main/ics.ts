@@ -4,6 +4,8 @@ import type { CalendarEvent } from '../types/ipc'
 const MAX_BODY_BYTES = 5 * 1024 * 1024
 const FETCH_TIMEOUT_MS = 15_000
 const MAX_INSTANCES_PER_EVENT = 500
+const MAX_VEVENTS = 2000
+const MAX_TOTAL_EVENTS = 5000
 
 export type UrlCheck = { ok: true; url: string } | { ok: false; error: string }
 
@@ -22,14 +24,53 @@ export function normalizeIcsUrl(input: string): UrlCheck {
   return { ok: true, url: parsed.toString() }
 }
 
+const MAX_REDIRECTS = 3
+
+// Redirects are followed by hand so every hop is re-checked against the same
+// scheme rules, and the body is streamed with a running byte count so a
+// chunked response without content-length cannot exhaust memory.
 export async function fetchIcsBody(url: string): Promise<string> {
-  const res = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
-  if (!res.ok) throw new Error(`ICS fetch failed: ${res.status}`)
-  const declared = Number(res.headers.get('content-length') ?? 0)
-  if (declared > MAX_BODY_BYTES) throw new Error('ICS feed too large')
-  const text = await res.text()
-  if (text.length > MAX_BODY_BYTES) throw new Error('ICS feed too large')
-  return text
+  const signal = AbortSignal.timeout(FETCH_TIMEOUT_MS)
+  let current = url
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    const res = await fetch(current, { signal, redirect: 'manual' })
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers.get('location')
+      const next = location ? normalizeIcsUrl(new URL(location, current).toString()) : null
+      if (!next?.ok) throw new Error('ICS redirect rejected')
+      current = next.url
+      continue
+    }
+    if (!res.ok || !res.body) throw new Error(`ICS fetch failed: ${res.status}`)
+    return readCapped(res.body)
+  }
+  throw new Error('ICS too many redirects')
+}
+
+async function readCapped(body: ReadableStream<Uint8Array>): Promise<string> {
+  const reader = body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    if (total > MAX_BODY_BYTES) {
+      await reader.cancel()
+      throw new Error('ICS feed too large')
+    }
+    chunks.push(value)
+  }
+  return new TextDecoder().decode(Buffer.concat(chunks))
+}
+
+const SUB_DAILY = new Set(['SECONDLY', 'MINUTELY', 'HOURLY'])
+
+// rrule freq may be a name or the numeric enum (HOURLY=4, MINUTELY=5, SECONDLY=6)
+export function isSubDailyRule(rrule: unknown): boolean {
+  const freq = (rrule as { options?: { freq?: unknown } } | undefined)?.options?.freq
+  if (typeof freq === 'number') return freq >= 4
+  return typeof freq === 'string' && SUB_DAILY.has(freq.toUpperCase())
 }
 
 function pad(n: number): string {
@@ -61,10 +102,15 @@ export function parseIcsEvents(
   const parsed = ical.sync.parseICS(body)
   const out: CalendarEvent[] = []
 
+  let seen = 0
   for (const component of Object.values(parsed)) {
     if (!component || component.type !== 'VEVENT') continue
+    if (++seen > MAX_VEVENTS || out.length >= MAX_TOTAL_EVENTS) break
     const vevent = component as ical.VEvent
     if (vevent.status === 'CANCELLED' || !vevent.start) continue
+    // expansion materializes every occurrence before we can cap it, so refuse
+    // second/minute/hour rules outright instead of walking millions of them
+    if (isSubDailyRule(vevent.rrule)) continue
 
     const instances = vevent.rrule
       ? ical

@@ -36,8 +36,8 @@ Tap **Manage** to add or delete chores and lists. Limits: 20 lists, 200 items pe
 Besides Google Calendar you can subscribe to any read-only `.ics` feed (school or sports schedules, holidays, iCloud/Outlook "publish" links): open the menu (☰) → **Add calendar by URL**. `webcal://` links work. Feeds appear alongside your Google calendars (selectable, colored, usable with the person chips), recurring events are expanded, and feeds are refreshed every 10 minutes.
 
 - Read-only: events from feeds cannot be edited from the app. Local alerts still work.
-- Only `http(s)`/`webcal` URLs are fetched, with a 15 s timeout and a 5 MB size limit. The URL is checked when you add it.
-- Private feed URLs often contain a secret token. They are stored in the app's local settings file (mode 600) and are never sent to the display layer, which only sees the name and color.
+- Only `http(s)`/`webcal` URLs are fetched, with a 15 s timeout, a 5 MB streamed size limit and at most 3 redirects (each re-checked). The URL is checked when you add it. Up to 20 feeds; duplicates are rejected. Recurrence rules repeating more often than daily are ignored.
+- Private feed URLs often contain a secret token. They are stored in plain text in the app's local settings file (the same file that holds your preferences) and are never sent to the display layer, which only sees the name and color. Treat that file as sensitive: anyone with access to the Pi's user account can read it.
 
 ---
 

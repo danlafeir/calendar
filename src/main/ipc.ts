@@ -2,10 +2,11 @@ import { ipcMain, BrowserWindow } from 'electron'
 import { IPC_CHANNELS, eventKey } from '../types/ipc'
 import { startOAuthFlow, isAuthenticated, getAuthEmail, signOut } from './auth'
 import { getEvents, createEvent, updateEvent, deleteEvent, getCalendars, clearCalendarCache, forgetIcsCalendar } from './calendar'
-import { defaultRange, unionRange, rangesEqual, type SyncRange } from './syncRange'
+import { defaultRange, unionRange, rangesEqual, sanitizeRange, type SyncRange } from './syncRange'
 import { getWeather, fetchAndCache } from './weather'
-import { getNotifyConfig, setNotifyConfig, getSettings, getSelectedCalendarIds, setSelectedCalendarIds, pruneNotifyConfigs, getAppSettings, updateAppSettings, getIcsSources, addIcsSource, removeIcsSource, getHomeData, setHomeData } from './store'
+import { getNotifyConfig, setNotifyConfig, getSettings, getSelectedCalendarIds, setSelectedCalendarIds, pruneNotifyConfigs, getAppSettings, updateAppSettings, getIcsSources, addIcsSource, removeIcsSource, getHomeData, setHomeData, MAX_ICS_SOURCES } from './store'
 import { fetchIcsBody, normalizeIcsUrl, parseIcsEvents } from './ics'
+import { isValidNotifyKey, sanitizeNotifyConfig } from './notifyValidation'
 import { sanitizeHomeData } from './homeValidation'
 import { getNextPhoto } from './photos'
 import { sanitizeSettingsPatch } from './settingsValidation'
@@ -36,10 +37,14 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   })
 
   ipcMain.handle(IPC_CHANNELS.CALENDAR_GET_EVENTS, async (_, params) => {
-    return (await getEvents(params.timeMin, params.timeMax)).events
+    const range = sanitizeRange(params)
+    if (!range) return []
+    return (await getEvents(range.timeMin, range.timeMax)).events
   })
 
-  ipcMain.handle(IPC_CHANNELS.CALENDAR_SET_RANGE, async (_, range: SyncRange) => {
+  ipcMain.handle(IPC_CHANNELS.CALENDAR_SET_RANGE, async (_, input: unknown) => {
+    const range = sanitizeRange(input)
+    if (!range) return
     const before = unionRange(defaultRange(new Date()), visibleRange)
     visibleRange = range
     const after = unionRange(defaultRange(new Date()), visibleRange)
@@ -97,12 +102,16 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     } catch {
       return { ok: false, error: 'Could not read a calendar from that URL' }
     }
+    const existing = getIcsSources()
+    if (existing.length >= MAX_ICS_SOURCES) return { ok: false, error: `At most ${MAX_ICS_SOURCES} feeds` }
+    if (existing.some((s) => s.url === checked.url)) return { ok: false, error: 'That feed is already added' }
     addIcsSource(name, checked.url)
     await syncCalendar(mainWindow)
     return { ok: true, sources: icsInfos() }
   })
 
-  ipcMain.handle(IPC_CHANNELS.ICS_REMOVE, async (_, id: string) => {
+  ipcMain.handle(IPC_CHANNELS.ICS_REMOVE, async (_, id: unknown) => {
+    if (typeof id !== 'string') return icsInfos()
     removeIcsSource(id)
     forgetIcsCalendar(id)
     await syncCalendar(mainWindow)
@@ -122,11 +131,14 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   })
 
   ipcMain.handle(IPC_CHANNELS.STORE_GET_NOTIFY_CONFIG, (_, { eventKey }) => {
+    if (!isValidNotifyKey(eventKey)) return { minutesBefore: [10], soundEnabled: true }
     return getNotifyConfig(eventKey)
   })
 
   ipcMain.handle(IPC_CHANNELS.STORE_SET_NOTIFY_CONFIG, (_, { eventKey, config }) => {
-    setNotifyConfig(eventKey, config)
+    const clean = sanitizeNotifyConfig(config)
+    if (!isValidNotifyKey(eventKey) || !clean) return
+    setNotifyConfig(eventKey, clean)
   })
 
   // Start background services if already authenticated

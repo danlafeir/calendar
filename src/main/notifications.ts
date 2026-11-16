@@ -31,6 +31,16 @@ export function stopScheduler(): void {
 }
 
 function tick(mainWindow: BrowserWindow): void {
+  try {
+    runTick(mainWindow)
+  } catch (err) {
+    // a bad stored config must not turn into an uncaught exception every 30s
+    console.error('Reminder tick failed:', err)
+    lastTick = Date.now()
+  }
+}
+
+function runTick(mainWindow: BrowserWindow): void {
   const now = Date.now()
   const due = dueReminders(
     cachedEvents,

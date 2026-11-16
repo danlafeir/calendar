@@ -68,3 +68,16 @@ describe('normalizeIcsUrl', () => {
     expect(normalizeIcsUrl('nonsense').ok).toBe(false)
   })
 })
+
+describe('limits', () => {
+  it('skips sub-daily recurrence rules', () => {
+    const body = wrap(`BEGIN:VEVENT
+UID:s@x
+DTSTART:20261109T140000Z
+DTEND:20261109T140100Z
+RRULE:FREQ=SECONDLY
+SUMMARY:Spam
+END:VEVENT`)
+    expect(parseIcsEvents(body, range, 'ics:1')).toHaveLength(0)
+  })
+})

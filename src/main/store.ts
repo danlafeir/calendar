@@ -3,6 +3,7 @@ import Store from 'electron-store'
 import { chmod } from 'fs/promises'
 import { join } from 'path'
 import { DEFAULT_APP_SETTINGS } from '../types/ipc'
+import { MAX_NOTIFY_KEYS } from './notifyValidation'
 import { randomUUID } from 'crypto'
 import type { WeatherData, NotifyConfig, AppSettings, HomeData } from '../types/ipc'
 
@@ -92,13 +93,13 @@ export function clearTokens(): void {
 // legacyId: configs saved before keys became calendarId:id were keyed by bare event id
 export function getNotifyConfig(key: string, legacyId?: string): NotifyConfig {
   const configs = store.get('notifyConfigs')
-  return (
-    configs[key] ?? (legacyId ? configs[legacyId] : undefined) ?? { minutesBefore: [10], soundEnabled: true }
-  )
+  const own = (k: string) => (Object.hasOwn(configs, k) ? configs[k] : undefined)
+  return own(key) ?? (legacyId ? own(legacyId) : undefined) ?? { minutesBefore: [10], soundEnabled: true }
 }
 
 export function setNotifyConfig(key: string, config: NotifyConfig): void {
   const configs = store.get('notifyConfigs')
+  if (!Object.hasOwn(configs, key) && Object.keys(configs).length >= MAX_NOTIFY_KEYS) return
   configs[key] = { ...config, savedAt: Date.now() }
   store.set('notifyConfigs', configs)
 }
@@ -164,6 +165,8 @@ const ICS_COLORS = ['#f2994a', '#bb6bd9', '#27ae60', '#eb5757', '#56ccf2', '#f2c
 export function getIcsSources(): IcsSource[] {
   return store.get('icsSources')
 }
+
+export const MAX_ICS_SOURCES = 20
 
 export function addIcsSource(name: string, url: string): IcsSource {
   const sources = store.get('icsSources')
