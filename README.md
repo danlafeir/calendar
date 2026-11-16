@@ -37,8 +37,8 @@ After the idle delay the app shows a full-screen ambient screen: a large clock, 
 
 To show photos behind the clock, put `.jpg`, `.jpeg`, `.png` or `.webp` files in the photos folder. They are resized in the app, shown one at a time, and rotate every minute. Files over 30 MB are skipped.
 
-- Default folder: `~/.config/pi-calendar/photos` on Linux (the app's user-data folder + `/photos`)
-- Override with `PHOTO_DIR=/path/to/photos` in your `.env`
+- Recommended: set `PHOTO_DIR=/path/to/photos` in your `.env` (restart the app after changing it)
+- Default if unset: a `photos` folder inside the app's Electron user-data directory (under `~/.config/` on Linux; the exact name depends on how the app was built)
 
 With no photos the screensaver is a plain black screen with the clock.
 
