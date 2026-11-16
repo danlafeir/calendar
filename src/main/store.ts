@@ -4,7 +4,7 @@ import { chmod } from 'fs/promises'
 import { join } from 'path'
 import { DEFAULT_APP_SETTINGS } from '../types/ipc'
 import { randomUUID } from 'crypto'
-import type { WeatherData, NotifyConfig, AppSettings } from '../types/ipc'
+import type { WeatherData, NotifyConfig, AppSettings, HomeData } from '../types/ipc'
 
 interface StoreSchema {
   encryptedTokens: string
@@ -19,6 +19,7 @@ interface StoreSchema {
   }
   appSettings: Partial<AppSettings>
   icsSources: IcsSource[]
+  homeData: HomeData
 }
 
 // url may embed a private token, so it stays in main and is never sent to the renderer
@@ -39,6 +40,7 @@ const store = new Store<StoreSchema>({
     selectedCalendarIds: null,
     appSettings: {},
     icsSources: [],
+    homeData: { lists: [], chores: [] },
     settings: {
       weatherLat: parseFloat(process.env.WEATHER_LAT ?? '37.7749'),
       weatherLon: parseFloat(process.env.WEATHER_LON ?? '-122.4194'),
@@ -147,6 +149,14 @@ export function getAppSettings(): AppSettings {
 export function updateAppSettings(patch: Partial<AppSettings>): AppSettings {
   store.set('appSettings', { ...store.get('appSettings'), ...patch })
   return getAppSettings()
+}
+
+export function getHomeData(): HomeData {
+  return store.get('homeData')
+}
+
+export function setHomeData(data: HomeData): void {
+  store.set('homeData', data)
 }
 
 const ICS_COLORS = ['#f2994a', '#bb6bd9', '#27ae60', '#eb5757', '#56ccf2', '#f2c94c']

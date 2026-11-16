@@ -4,8 +4,9 @@ import { startOAuthFlow, isAuthenticated, getAuthEmail, signOut } from './auth'
 import { getEvents, createEvent, updateEvent, deleteEvent, getCalendars, clearCalendarCache, forgetIcsCalendar } from './calendar'
 import { defaultRange, unionRange, rangesEqual, type SyncRange } from './syncRange'
 import { getWeather, fetchAndCache } from './weather'
-import { getNotifyConfig, setNotifyConfig, getSettings, getSelectedCalendarIds, setSelectedCalendarIds, pruneNotifyConfigs, getAppSettings, updateAppSettings, getIcsSources, addIcsSource, removeIcsSource } from './store'
+import { getNotifyConfig, setNotifyConfig, getSettings, getSelectedCalendarIds, setSelectedCalendarIds, pruneNotifyConfigs, getAppSettings, updateAppSettings, getIcsSources, addIcsSource, removeIcsSource, getHomeData, setHomeData } from './store'
 import { fetchIcsBody, normalizeIcsUrl, parseIcsEvents } from './ics'
+import { sanitizeHomeData } from './homeValidation'
 import { getNextPhoto } from './photos'
 import { sanitizeSettingsPatch } from './settingsValidation'
 import { updateEventCache, startScheduler } from './notifications'
@@ -73,6 +74,14 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle(IPC_CHANNELS.STORE_SET_SELECTED_CALENDARS, async (_, ids: string[] | null) => {
     setSelectedCalendarIds(ids)
     await syncCalendar(mainWindow)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.HOME_GET, () => getHomeData())
+
+  ipcMain.handle(IPC_CHANNELS.HOME_SAVE, (_, data: unknown) => {
+    const clean = sanitizeHomeData(data)
+    setHomeData(clean)
+    return clean
   })
 
   ipcMain.handle(IPC_CHANNELS.ICS_LIST, () => icsInfos())

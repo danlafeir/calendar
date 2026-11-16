@@ -72,6 +72,34 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   units: 'imperial',
 }
 
+export interface ListItem {
+  id: string
+  text: string
+  done: boolean
+}
+
+export interface TodoList {
+  id: string
+  name: string
+  items: ListItem[]
+}
+
+export interface Chore {
+  id: string
+  title: string
+  // a calendar id (one calendar per person), or null for "anyone"
+  assignee: string | null
+  // weekdays 0 (Sun) - 6 (Sat); empty means every day
+  days: number[]
+  // YYYY-MM-DD dates on which it was completed
+  doneDates: string[]
+}
+
+export interface HomeData {
+  lists: TodoList[]
+  chores: Chore[]
+}
+
 export interface IcsSourceInfo {
   id: string
   name: string
@@ -117,6 +145,8 @@ export const IPC_CHANNELS = {
   CALENDAR_SYNCED: 'calendar:synced',
   CALENDAR_SET_RANGE: 'calendar:setRange',
   PHOTO_NEXT: 'photo:next',
+  HOME_GET: 'home:get',
+  HOME_SAVE: 'home:save',
   ICS_LIST: 'ics:list',
   ICS_ADD: 'ics:add',
   ICS_REMOVE: 'ics:remove',
@@ -131,6 +161,8 @@ export interface ElectronAPI {
   updateEvent: (event: CalendarEvent) => Promise<CalendarEvent>
   deleteEvent: (params: { id: string; calendarId: string }) => Promise<void>
   getCalendars: () => Promise<CalendarInfo[]>
+  getHomeData: () => Promise<HomeData>
+  saveHomeData: (data: HomeData) => Promise<HomeData>
   listIcsSources: () => Promise<IcsSourceInfo[]>
   addIcsSource: (params: { name: string; url: string }) => Promise<IcsAddResult>
   removeIcsSource: (id: string) => Promise<IcsSourceInfo[]>

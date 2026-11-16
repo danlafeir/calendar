@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { addWeeks, subWeeks, addMonths, subMonths, addDays, subDays } from 'date-fns'
 import type { CalendarEvent, SyncPayload } from '@renderer/types'
 
-export type CalendarView = 'week' | 'month' | 'day' | 'agenda'
+export type CalendarView = 'week' | 'month' | 'day' | 'agenda' | 'home'
 
 interface SyncStatus {
   lastSyncedAt: number | null

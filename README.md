@@ -20,6 +20,17 @@ A fullscreen touchscreen calendar app for Raspberry Pi. Syncs with Google Calend
 
 ---
 
+## Chores and lists
+
+The **Home** tab has two panels, stored locally on the device (not synced to Google):
+
+- **Chores today** — recurring chores you tick off. Each chore can be assigned to a person (one of your calendars, which colors it) and limited to certain weekdays; no weekdays means every day. Completion is recorded per date, so each day starts fresh.
+- **Lists** — shared checklists such as groceries, with "Clear completed".
+
+Tap **Manage** to add or delete chores and lists. Limits: 20 lists, 200 items per list, 50 chores.
+
+---
+
 ## Subscribed (ICS) calendars
 
 Besides Google Calendar you can subscribe to any read-only `.ics` feed (school or sports schedules, holidays, iCloud/Outlook "publish" links): open the menu (☰) → **Add calendar by URL**. `webcal://` links work. Feeds appear alongside your Google calendars (selectable, colored, usable with the person chips), recurring events are expanded, and feeds are refreshed every 10 minutes.
