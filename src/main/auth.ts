@@ -4,13 +4,19 @@ import * as http from 'http'
 import * as url from 'url'
 import { saveTokens, loadTokens, clearTokens } from './store'
 
+const AUTH_TIMEOUT_MS = 15_000
+
 function makeOAuth2Client() {
   const clientId = process.env.GOOGLE_CLIENT_ID
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET
   if (!clientId || !clientSecret) {
     throw new Error('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set in .env')
   }
-  return new google.auth.OAuth2(clientId, clientSecret)
+  return new google.auth.OAuth2({
+    clientId,
+    clientSecret,
+    transporterOptions: { timeout: AUTH_TIMEOUT_MS },
+  })
 }
 
 export async function startOAuthFlow(): Promise<boolean> {
