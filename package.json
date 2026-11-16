@@ -11,7 +11,8 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "build:linux:arm64": "npm run build && electron-builder --linux --arm64",
-    "build:pi": "npm run build && electron-builder --linux --dir"
+    "build:pi": "npm run build && electron-builder --linux --dir",
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.0",
@@ -34,6 +35,7 @@
     "react-dom": "^18.3.0",
     "typescript": "^5.4.0",
     "vite": "^5.4.0",
+    "vitest": "^2.1.9",
     "zustand": "^5.0.0"
   },
   "build": {
@@ -42,12 +44,16 @@
     "directories": {
       "buildResources": "resources"
     },
-    "files": ["out/**/*"],
+    "files": [
+      "out/**/*"
+    ],
     "extraResources": [
       {
         "from": "resources/sounds",
         "to": "sounds",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "linux": {
