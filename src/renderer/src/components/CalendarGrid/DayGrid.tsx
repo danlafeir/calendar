@@ -1,6 +1,6 @@
 import { eventKey } from '@renderer/types'
 import { useRef, useEffect } from 'react'
-import { format, isToday, isSameDay, parseISO } from 'date-fns'
+import { format, isToday } from 'date-fns'
 import { useCalendarStore } from '@renderer/store/useCalendarStore'
 import { useUIStore } from '@renderer/store/useUIStore'
 import { useVisibleEvents } from '@renderer/hooks/useVisibleEvents'
@@ -9,6 +9,7 @@ import {
   totalGridHeight,
   PX_PER_MINUTE,
 } from '@renderer/lib/dateUtils'
+import { occursOnDay } from '@renderer/lib/eventSpan'
 import { useTouchGestures } from '@renderer/hooks/useTouchGestures'
 import { EventBlock } from './EventBlock'
 import { TimeIndicator } from './TimeIndicator'
@@ -38,8 +39,8 @@ export function DayGrid() {
 
   useTouchGestures(gridRef as React.RefObject<HTMLElement>)
 
-  const dayEvents = events.filter((e) => !e.allDay && isSameDay(parseISO(e.start), day))
-  const allDayEvents = events.filter((e) => e.allDay && isSameDay(parseISO(e.start), day))
+  const dayEvents = events.filter((e) => !e.allDay && occursOnDay(e, day))
+  const allDayEvents = events.filter((e) => e.allDay && occursOnDay(e, day))
 
   return (
     <div ref={gridRef} style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -129,7 +130,7 @@ export function DayGrid() {
             ))}
 
             {dayEvents.map((event) => (
-              <EventBlock key={eventKey(event)} event={event} onClick={openEditEvent} />
+              <EventBlock key={eventKey(event)} event={event} day={day} onClick={openEditEvent} />
             ))}
           </div>
           {isCurrent && <TimeIndicator />}

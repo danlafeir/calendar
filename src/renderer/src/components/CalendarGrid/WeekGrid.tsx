@@ -1,6 +1,6 @@
 import { eventKey } from '@renderer/types'
 import { useRef, useEffect } from 'react'
-import { format, isToday, isSameDay, parseISO } from 'date-fns'
+import { format, isToday } from 'date-fns'
 import { useCalendarStore } from '@renderer/store/useCalendarStore'
 import { useUIStore } from '@renderer/store/useUIStore'
 import { useVisibleEvents } from '@renderer/hooks/useVisibleEvents'
@@ -10,6 +10,7 @@ import {
   totalGridHeight,
   PX_PER_MINUTE,
 } from '@renderer/lib/dateUtils'
+import { occursOnDay } from '@renderer/lib/eventSpan'
 import { useTouchGestures } from '@renderer/hooks/useTouchGestures'
 import { EventBlock } from './EventBlock'
 import { TimeIndicator } from './TimeIndicator'
@@ -83,7 +84,7 @@ export function WeekGrid() {
   useTouchGestures(gridRef as React.RefObject<HTMLElement>)
 
   const allDayEvents = events.filter(
-    (e) => e.allDay && days.some((d) => isSameDay(parseISO(e.start), d)),
+    (e) => e.allDay && days.some((d) => occursOnDay(e, d)),
   )
 
   return (
@@ -168,7 +169,7 @@ export function WeekGrid() {
               <span style={{ fontSize: 10, color: 'var(--color-text-faint)' }}>all day</span>
             </div>
             {days.map((day) => {
-              const dayAllDay = allDayEvents.filter((e) => isSameDay(parseISO(e.start), day))
+              const dayAllDay = allDayEvents.filter((e) => occursOnDay(e, day))
               return (
                 <div
                   key={day.toISOString()}
@@ -234,7 +235,7 @@ export function WeekGrid() {
           {/* Day columns */}
           {days.map((day) => {
             const dayEvents = events.filter(
-              (e) => !e.allDay && isSameDay(parseISO(e.start), day),
+              (e) => !e.allDay && occursOnDay(e, day),
             )
             const layout = layoutEvents(dayEvents)
             const isCurrentDay = isToday(day)
@@ -298,6 +299,7 @@ export function WeekGrid() {
                     <EventBlock
                       key={eventKey(event)}
                       event={event}
+                      day={day}
                       columnIndex={info.colIdx}
                       columnCount={info.colCount}
                       onClick={openEditEvent}

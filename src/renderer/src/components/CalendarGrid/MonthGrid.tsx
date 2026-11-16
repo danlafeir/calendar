@@ -1,12 +1,14 @@
 import { eventKey } from '@renderer/types'
 import { useRef } from 'react'
-import { format, isToday, isSameDay, isSameMonth, parseISO } from 'date-fns'
+import { format, isToday, isSameMonth } from 'date-fns'
 import { useCalendarStore } from '@renderer/store/useCalendarStore'
 import { useUIStore } from '@renderer/store/useUIStore'
 import { useVisibleEvents } from '@renderer/hooks/useVisibleEvents'
 import { getMonthDays, formatEventTime } from '@renderer/lib/dateUtils'
+import { occursOnDay, compareForDay } from '@renderer/lib/eventSpan'
 import { useTouchGestures } from '@renderer/hooks/useTouchGestures'
 
+const MAX_PER_CELL = 3
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export function MonthGrid() {
@@ -32,9 +34,9 @@ export function MonthGrid() {
       {/* Month grid */}
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: 'repeat(6, 1fr)', overflow: 'hidden' }}>
         {days.map((day) => {
-          const dayEvents = events
-            .filter((e) => isSameDay(parseISO(e.allDay ? e.start : e.start), day))
-            .slice(0, 4)
+          const allDayEvents = events.filter((e) => occursOnDay(e, day)).sort(compareForDay)
+          const dayEvents = allDayEvents.slice(0, MAX_PER_CELL)
+          const hiddenCount = allDayEvents.length - dayEvents.length
           const isCurrentMonth = isSameMonth(day, selectedDate)
           const isCurrent = isToday(day)
 
@@ -107,6 +109,14 @@ export function MonthGrid() {
                   {event.title}
                 </button>
               ))}
+              {hiddenCount > 0 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setSelectedDate(day); setActiveView('day') }}
+                  style={{ fontSize: 11, color: 'var(--color-text-muted)', padding: '0 5px' }}
+                >
+                  +{hiddenCount} more
+                </button>
+              )}
             </div>
           )
         })}

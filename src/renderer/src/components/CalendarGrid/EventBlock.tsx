@@ -1,5 +1,6 @@
 import type { CalendarEvent } from '@renderer/types'
 import { eventTop, eventHeight, formatEventTime } from '@renderer/lib/dateUtils'
+import { clipToDay } from '@renderer/lib/eventSpan'
 
 const COLOR_MAP: Record<string, string> = {
   '1': '#a8c7fa',
@@ -20,12 +21,16 @@ interface EventBlockProps {
   event: CalendarEvent
   columnIndex?: number
   columnCount?: number
+  day?: Date
   onClick: (event: CalendarEvent) => void
 }
 
-export function EventBlock({ event, columnIndex = 0, columnCount = 1, onClick }: EventBlockProps) {
-  const top = eventTop(event.start)
-  const height = eventHeight(event.start, event.end)
+export function EventBlock({ event, columnIndex = 0, columnCount = 1, day, onClick }: EventBlockProps) {
+  const clipped = day ? clipToDay(event, day) : null
+  const startIso = clipped ? clipped.start.toISOString() : event.start
+  const endIso = clipped ? clipped.end.toISOString() : event.end
+  const top = eventTop(startIso)
+  const height = eventHeight(startIso, endIso)
   const color = COLOR_MAP[event.colorId ?? ''] ?? DEFAULT_COLOR
   const colWidth = 100 / columnCount
   const left = colWidth * columnIndex

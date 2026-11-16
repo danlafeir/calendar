@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { format, parseISO } from 'date-fns'
+import { addDays, format, parseISO } from 'date-fns'
+import { lastDayOfAllDay } from '@renderer/lib/eventSpan'
 import { useUIStore } from '@renderer/store/useUIStore'
 import { ipc } from '@renderer/lib/ipc'
 import { useSettingsStore } from '@renderer/store/useSettingsStore'
@@ -45,6 +46,12 @@ export function EventModal() {
   const [description, setDescription] = useState(editingEvent?.description ?? '')
   const [location, setLocation] = useState(editingEvent?.location ?? '')
   const [date, setDate] = useState(initDate)
+  const initEndDate = editingEvent
+    ? editingEvent.allDay
+      ? lastDayOfAllDay(editingEvent)
+      : toLocalDateString(editingEvent.end)
+    : initDate
+  const [endDate, setEndDate] = useState(initEndDate)
   const [startTime, setStartTime] = useState(initStartTime)
   const [endTime, setEndTime] = useState(initEndTime)
   const [allDay, setAllDay] = useState(editingEvent?.allDay ?? false)
@@ -66,6 +73,7 @@ export function EventModal() {
     setDescription(editingEvent?.description ?? '')
     setLocation(editingEvent?.location ?? '')
     setDate(initDate)
+    setEndDate(initEndDate)
     setStartTime(initStartTime)
     setEndTime(initEndTime)
     setAllDay(editingEvent?.allDay ?? false)
@@ -98,8 +106,13 @@ export function EventModal() {
     setSaving(true)
     setError('')
     try {
-      const start = allDay ? `${date}T00:00:00.000Z` : buildIso(date, startTime)
-      const end = allDay ? `${date}T23:59:59.000Z` : buildIso(date, endTime)
+      if (endDate < date) { setError('End date is before start date'); setSaving(false); return }
+      // Google's all-day end is exclusive, so a one-day event ends the next day
+      const start = allDay ? date : buildIso(date, startTime)
+      const end = allDay
+        ? format(addDays(parseISO(endDate), 1), 'yyyy-MM-dd')
+        : buildIso(endDate, endTime)
+      if (!allDay && end <= start) { setError('End must be after start'); setSaving(false); return }
 
       if (isEditing && editingEvent && readOnly) {
         await ipc().setNotifyConfig({ eventKey: eventKey(editingEvent), config: notifyConfig })
@@ -165,7 +178,19 @@ export function EventModal() {
           <div style={{ display: 'flex', gap: 12 }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 4 }}>Date</div>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ width: '100%' }} />
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => {
+                  setDate(e.target.value)
+                  if (endDate < e.target.value) setEndDate(e.target.value)
+                }}
+                style={{ width: '100%' }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 4 }}>End date</div>
+              <input type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} style={{ width: '100%' }} />
             </div>
             {!allDay && (
               <>
