@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { ipc } from '@renderer/lib/ipc'
 import { useCalendarStore } from '@renderer/store/useCalendarStore'
-import { useCalendarSync } from '@renderer/hooks/useCalendarSync'
+import { useCalendarSync, useVisibleRangeSync } from '@renderer/hooks/useCalendarSync'
 import { useNotifications } from '@renderer/hooks/useNotifications'
 import { NavBar } from '@renderer/components/NavBar'
 import { AuthScreen } from '@renderer/components/AuthScreen'
@@ -29,6 +29,7 @@ export function App() {
   }, [])
 
   useCalendarSync(authState === 'authenticated')
+  useVisibleRangeSync(authState === 'authenticated')
   useNotifications()
 
   if (authState === 'checking') {

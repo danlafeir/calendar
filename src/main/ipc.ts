@@ -1,12 +1,14 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '../types/ipc'
 import { startOAuthFlow, isAuthenticated, getAuthEmail, signOut } from './auth'
-import { getEvents, createEvent, updateEvent, deleteEvent, getCalendars } from './calendar'
+import { getEvents, createEvent, updateEvent, deleteEvent, getCalendars, clearCalendarCache } from './calendar'
+import { defaultRange, unionRange, rangesEqual, type SyncRange } from './syncRange'
 import { getWeather, fetchAndCache } from './weather'
 import { getNotifyConfig, setNotifyConfig, getSettings, getSelectedCalendarIds, setSelectedCalendarIds } from './store'
 import { updateEventCache, startScheduler } from './notifications'
 
 let backgroundSyncInterval: ReturnType<typeof setInterval> | null = null
+let visibleRange: SyncRange | null = null
 
 export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle(IPC_CHANNELS.AUTH_START_OAUTH, async () => {
@@ -25,11 +27,19 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle(IPC_CHANNELS.AUTH_SIGN_OUT, () => {
     signOut()
+    clearCalendarCache()
     stopBackgroundSync()
   })
 
   ipcMain.handle(IPC_CHANNELS.CALENDAR_GET_EVENTS, async (_, params) => {
-    return getEvents(params.timeMin, params.timeMax)
+    return (await getEvents(params.timeMin, params.timeMax)).events
+  })
+
+  ipcMain.handle(IPC_CHANNELS.CALENDAR_SET_RANGE, async (_, range: SyncRange) => {
+    const before = unionRange(defaultRange(new Date()), visibleRange)
+    visibleRange = range
+    const after = unionRange(defaultRange(new Date()), visibleRange)
+    if (!rangesEqual(before, after) && isAuthenticated()) await syncCalendar(mainWindow)
   })
 
   ipcMain.handle(IPC_CHANNELS.CALENDAR_CREATE_EVENT, async (_, event) => {
@@ -86,14 +96,21 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
 async function syncCalendar(mainWindow: BrowserWindow): Promise<void> {
   try {
-    const now = new Date()
-    const timeMin = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
-    const timeMax = new Date(now.getFullYear(), now.getMonth() + 3, 0).toISOString()
-    const events = await getEvents(timeMin, timeMax)
+    const { timeMin, timeMax } = unionRange(defaultRange(new Date()), visibleRange)
+    const { events, failedCalendarIds } = await getEvents(timeMin, timeMax)
     updateEventCache(events)
-    mainWindow.webContents.send(IPC_CHANNELS.CALENDAR_SYNCED, { events })
+    mainWindow.webContents.send(IPC_CHANNELS.CALENDAR_SYNCED, {
+      events,
+      failedCalendarIds,
+      syncedAt: Date.now(),
+    })
   } catch (err) {
     console.error('Calendar sync failed:', err)
+    mainWindow.webContents.send(IPC_CHANNELS.CALENDAR_SYNCED, {
+      events: null,
+      failedCalendarIds: [],
+      syncedAt: Date.now(),
+    })
   }
 }
 

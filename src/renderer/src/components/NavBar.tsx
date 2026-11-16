@@ -3,6 +3,7 @@ import { useCalendarStore, type CalendarView } from '@renderer/store/useCalendar
 import { useSettingsStore } from '@renderer/store/useSettingsStore'
 import { ClockWidget } from '@renderer/components/widgets/ClockWidget'
 import { NextEventWidget } from '@renderer/components/widgets/NextEventWidget'
+import { SyncStatus } from '@renderer/components/widgets/SyncStatus'
 import { WeatherCompact } from '@renderer/components/widgets/WeatherWidget'
 
 const VIEWS: { key: CalendarView; label: string }[] = [
@@ -102,6 +103,8 @@ export function NavBar() {
       <div style={{ flex: 1, fontSize: 15, fontWeight: 500, color: 'var(--color-text)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {getDateRangeLabel(activeView, selectedDate)}
       </div>
+
+      <SyncStatus />
 
       {/* Weather */}
       <WeatherCompact />

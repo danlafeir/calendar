@@ -43,6 +43,13 @@ export interface WeatherData {
   fetchedAt: number
 }
 
+export interface SyncPayload {
+  // null when the whole sync failed; the renderer keeps what it already has
+  events: CalendarEvent[] | null
+  failedCalendarIds: string[]
+  syncedAt: number
+}
+
 export interface NotifyConfig {
   minutesBefore: number[]
   soundEnabled: boolean
@@ -70,6 +77,7 @@ export const IPC_CHANNELS = {
   STORE_SET_SELECTED_CALENDARS: 'store:setSelectedCalendars',
   NOTIFICATION_REMINDER: 'notification:reminder',
   CALENDAR_SYNCED: 'calendar:synced',
+  CALENDAR_SET_RANGE: 'calendar:setRange',
   WEATHER_UPDATED: 'weather:updated',
 } as const
 
@@ -79,6 +87,7 @@ export interface ElectronAPI {
   updateEvent: (event: CalendarEvent) => Promise<CalendarEvent>
   deleteEvent: (params: { id: string; calendarId: string }) => Promise<void>
   getCalendars: () => Promise<CalendarInfo[]>
+  setVisibleRange: (range: { timeMin: string; timeMax: string }) => Promise<void>
   startOAuth: () => Promise<{ success: boolean }>
   getAuthStatus: () => Promise<{ authenticated: boolean; email?: string }>
   signOut: () => Promise<void>
@@ -88,7 +97,7 @@ export interface ElectronAPI {
   getSelectedCalendars: () => Promise<string[] | null>
   setSelectedCalendars: (ids: string[] | null) => Promise<void>
   onNotificationReminder: (callback: (payload: NotificationPayload) => void) => () => void
-  onCalendarSynced: (callback: (events: CalendarEvent[]) => void) => () => void
+  onCalendarSynced: (callback: (payload: SyncPayload) => void) => () => void
   onWeatherUpdated: (callback: (data: WeatherData) => void) => () => void
 }
 

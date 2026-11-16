@@ -17,6 +17,15 @@ A fullscreen touchscreen calendar app for Raspberry Pi. Syncs with Google Calend
 
 ---
 
+## Sync behavior
+
+- Events are fetched for the previous month through ~3 months ahead, plus whatever date range you are currently viewing, so browsing far from today still shows events.
+- Calendar list and events are paginated, and every Google and weather request has a timeout (15s / 10s).
+- If one calendar fails to sync, its last good events are kept and a "Sync issue" notice appears in the top bar; the same notice appears if no sync has succeeded in 5 minutes.
+- Incremental sync (`syncToken`) is not used: Google does not allow it together with `timeMin`/`timeMax`, which the windowed fetch relies on. Each sync refetches the window.
+
+---
+
 ## Requirements
 
 | Dependency | Version |

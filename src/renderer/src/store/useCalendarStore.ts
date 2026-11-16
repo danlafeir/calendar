@@ -1,11 +1,18 @@
 import { create } from 'zustand'
 import { addWeeks, subWeeks, addMonths, subMonths, addDays, subDays } from 'date-fns'
-import type { CalendarEvent } from '@renderer/types'
+import type { CalendarEvent, SyncPayload } from '@renderer/types'
 
 export type CalendarView = 'week' | 'month' | 'day'
 
+interface SyncStatus {
+  lastSyncedAt: number | null
+  failing: boolean
+}
+
 interface CalendarState {
   events: CalendarEvent[]
+  sync: SyncStatus
+  applySync: (payload: SyncPayload) => void
   selectedDate: Date
   activeView: CalendarView
   setEvents: (events: CalendarEvent[]) => void
@@ -18,6 +25,17 @@ interface CalendarState {
 
 export const useCalendarStore = create<CalendarState>((set, get) => ({
   events: [],
+  sync: { lastSyncedAt: null, failing: false },
+  applySync: (payload) => {
+    if (payload.events === null) {
+      set({ sync: { ...get().sync, failing: true } })
+      return
+    }
+    set({
+      events: payload.events,
+      sync: { lastSyncedAt: payload.syncedAt, failing: payload.failedCalendarIds.length > 0 },
+    })
+  },
   selectedDate: new Date(),
   activeView: 'week',
 

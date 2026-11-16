@@ -19,6 +19,7 @@ export async function fetchAndCache(): Promise<WeatherData | null> {
   try {
     const res = await fetch(
       `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=imperial`,
+      { signal: AbortSignal.timeout(10_000) },
     )
     if (!res.ok) return null
     const json = (await res.json()) as OpenWeatherResponse
