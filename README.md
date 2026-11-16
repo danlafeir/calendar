@@ -20,6 +20,16 @@ A fullscreen touchscreen calendar app for Raspberry Pi. Syncs with Google Calend
 
 ---
 
+## Subscribed (ICS) calendars
+
+Besides Google Calendar you can subscribe to any read-only `.ics` feed (school or sports schedules, holidays, iCloud/Outlook "publish" links): open the menu (☰) → **Add calendar by URL**. `webcal://` links work. Feeds appear alongside your Google calendars (selectable, colored, usable with the person chips), recurring events are expanded, and feeds are refreshed every 10 minutes.
+
+- Read-only: events from feeds cannot be edited from the app. Local alerts still work.
+- Only `http(s)`/`webcal` URLs are fetched, with a 15 s timeout and a 5 MB size limit. The URL is checked when you add it.
+- Private feed URLs often contain a secret token. They are stored in the app's local settings file (mode 600) and are never sent to the display layer, which only sees the name and color.
+
+---
+
 ## Display settings
 
 Open the menu (☰) and scroll to the bottom of the drawer. Settings are stored locally on the device.

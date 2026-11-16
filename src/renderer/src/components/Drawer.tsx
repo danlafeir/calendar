@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { ipc } from '@renderer/lib/ipc'
+import { IcsSources } from '@renderer/components/IcsSources'
 import { DisplaySettings } from '@renderer/components/DisplaySettings'
 import { useSettingsStore } from '@renderer/store/useSettingsStore'
 
@@ -190,6 +191,8 @@ export function Drawer() {
               </button>
             )
           })}
+
+          <IcsSources />
 
           <DisplaySettings />
         </div>

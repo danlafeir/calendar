@@ -1,10 +1,11 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { IPC_CHANNELS, eventKey } from '../types/ipc'
 import { startOAuthFlow, isAuthenticated, getAuthEmail, signOut } from './auth'
-import { getEvents, createEvent, updateEvent, deleteEvent, getCalendars, clearCalendarCache } from './calendar'
+import { getEvents, createEvent, updateEvent, deleteEvent, getCalendars, clearCalendarCache, forgetIcsCalendar } from './calendar'
 import { defaultRange, unionRange, rangesEqual, type SyncRange } from './syncRange'
 import { getWeather, fetchAndCache } from './weather'
-import { getNotifyConfig, setNotifyConfig, getSettings, getSelectedCalendarIds, setSelectedCalendarIds, pruneNotifyConfigs, getAppSettings, updateAppSettings } from './store'
+import { getNotifyConfig, setNotifyConfig, getSettings, getSelectedCalendarIds, setSelectedCalendarIds, pruneNotifyConfigs, getAppSettings, updateAppSettings, getIcsSources, addIcsSource, removeIcsSource } from './store'
+import { fetchIcsBody, normalizeIcsUrl, parseIcsEvents } from './ics'
 import { getNextPhoto } from './photos'
 import { sanitizeSettingsPatch } from './settingsValidation'
 import { updateEventCache, startScheduler } from './notifications'
@@ -74,6 +75,31 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     await syncCalendar(mainWindow)
   })
 
+  ipcMain.handle(IPC_CHANNELS.ICS_LIST, () => icsInfos())
+
+  ipcMain.handle(IPC_CHANNELS.ICS_ADD, async (_, params: { name?: unknown; url?: unknown }) => {
+    const name = typeof params?.name === 'string' ? params.name.trim().slice(0, 60) : ''
+    if (!name) return { ok: false, error: 'Name is required' }
+    const checked = normalizeIcsUrl(typeof params?.url === 'string' ? params.url : '')
+    if (!checked.ok) return checked
+    try {
+      // verify the feed is reachable and parses before saving it
+      parseIcsEvents(await fetchIcsBody(checked.url), { from: new Date(), to: new Date() }, 'check')
+    } catch {
+      return { ok: false, error: 'Could not read a calendar from that URL' }
+    }
+    addIcsSource(name, checked.url)
+    await syncCalendar(mainWindow)
+    return { ok: true, sources: icsInfos() }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.ICS_REMOVE, async (_, id: string) => {
+    removeIcsSource(id)
+    forgetIcsCalendar(id)
+    await syncCalendar(mainWindow)
+    return icsInfos()
+  })
+
   ipcMain.handle(IPC_CHANNELS.PHOTO_NEXT, () => getNextPhoto())
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, () => getAppSettings())
@@ -102,6 +128,10 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   // Start the notification scheduler
   startScheduler(mainWindow)
+}
+
+function icsInfos() {
+  return getIcsSources().map(({ id, name, color }) => ({ id, name, color }))
 }
 
 async function syncCalendar(mainWindow: BrowserWindow): Promise<void> {

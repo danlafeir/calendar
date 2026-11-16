@@ -72,6 +72,14 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   units: 'imperial',
 }
 
+export interface IcsSourceInfo {
+  id: string
+  name: string
+  color: string
+}
+
+export type IcsAddResult = { ok: true; sources: IcsSourceInfo[] } | { ok: false; error: string }
+
 export interface SyncPayload {
   // null when the whole sync failed; the renderer keeps what it already has
   events: CalendarEvent[] | null
@@ -109,6 +117,9 @@ export const IPC_CHANNELS = {
   CALENDAR_SYNCED: 'calendar:synced',
   CALENDAR_SET_RANGE: 'calendar:setRange',
   PHOTO_NEXT: 'photo:next',
+  ICS_LIST: 'ics:list',
+  ICS_ADD: 'ics:add',
+  ICS_REMOVE: 'ics:remove',
   SETTINGS_GET: 'settings:get',
   SETTINGS_UPDATE: 'settings:update',
   WEATHER_UPDATED: 'weather:updated',
@@ -120,6 +131,9 @@ export interface ElectronAPI {
   updateEvent: (event: CalendarEvent) => Promise<CalendarEvent>
   deleteEvent: (params: { id: string; calendarId: string }) => Promise<void>
   getCalendars: () => Promise<CalendarInfo[]>
+  listIcsSources: () => Promise<IcsSourceInfo[]>
+  addIcsSource: (params: { name: string; url: string }) => Promise<IcsAddResult>
+  removeIcsSource: (id: string) => Promise<IcsSourceInfo[]>
   getNextPhoto: () => Promise<string | null>
   getAppSettings: () => Promise<AppSettings>
   updateAppSettings: (patch: Partial<AppSettings>) => Promise<AppSettings>

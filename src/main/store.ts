@@ -3,6 +3,7 @@ import Store from 'electron-store'
 import { chmod } from 'fs/promises'
 import { join } from 'path'
 import { DEFAULT_APP_SETTINGS } from '../types/ipc'
+import { randomUUID } from 'crypto'
 import type { WeatherData, NotifyConfig, AppSettings } from '../types/ipc'
 
 interface StoreSchema {
@@ -17,6 +18,15 @@ interface StoreSchema {
     syncIntervalMs: number
   }
   appSettings: Partial<AppSettings>
+  icsSources: IcsSource[]
+}
+
+// url may embed a private token, so it stays in main and is never sent to the renderer
+export interface IcsSource {
+  id: string
+  name: string
+  url: string
+  color: string
 }
 
 const store = new Store<StoreSchema>({
@@ -28,6 +38,7 @@ const store = new Store<StoreSchema>({
     weatherCache: null,
     selectedCalendarIds: null,
     appSettings: {},
+    icsSources: [],
     settings: {
       weatherLat: parseFloat(process.env.WEATHER_LAT ?? '37.7749'),
       weatherLon: parseFloat(process.env.WEATHER_LON ?? '-122.4194'),
@@ -136,6 +147,28 @@ export function getAppSettings(): AppSettings {
 export function updateAppSettings(patch: Partial<AppSettings>): AppSettings {
   store.set('appSettings', { ...store.get('appSettings'), ...patch })
   return getAppSettings()
+}
+
+const ICS_COLORS = ['#f2994a', '#bb6bd9', '#27ae60', '#eb5757', '#56ccf2', '#f2c94c']
+
+export function getIcsSources(): IcsSource[] {
+  return store.get('icsSources')
+}
+
+export function addIcsSource(name: string, url: string): IcsSource {
+  const sources = store.get('icsSources')
+  const source: IcsSource = {
+    id: randomUUID(),
+    name,
+    url,
+    color: ICS_COLORS[sources.length % ICS_COLORS.length],
+  }
+  store.set('icsSources', [...sources, source])
+  return source
+}
+
+export function removeIcsSource(id: string): void {
+  store.set('icsSources', store.get('icsSources').filter((s) => s.id !== id))
 }
 
 export function getSettings(): StoreSchema['settings'] {

@@ -2,7 +2,8 @@ import { google, calendar_v3 } from 'googleapis'
 import { getAuthenticatedClient } from './auth'
 import { canWrite } from '../types/ipc'
 import type { CalendarEvent, CalendarInfo } from '../types/ipc'
-import { getSelectedCalendarIds } from './store'
+import { getSelectedCalendarIds, getIcsSources } from './store'
+import { fetchIcsBody, parseIcsEvents } from './ics'
 
 function mapEvent(
   e: calendar_v3.Schema$Event,
@@ -45,7 +46,23 @@ export function clearCalendarCache(): void {
   lastGood.clear()
 }
 
+export const ICS_PREFIX = 'ics:'
+
+function icsCalendars(): CalendarInfo[] {
+  return getIcsSources().map((s) => ({
+    id: `${ICS_PREFIX}${s.id}`,
+    name: s.name,
+    color: s.color,
+    primary: false,
+    accessRole: 'reader',
+  }))
+}
+
 export async function getCalendars(force = false): Promise<CalendarInfo[]> {
+  return [...(await getGoogleCalendars(force)), ...icsCalendars()]
+}
+
+async function getGoogleCalendars(force: boolean): Promise<CalendarInfo[]> {
   if (!force && calendarListCache && Date.now() - calendarListCache.at < CALENDAR_LIST_TTL_MS) {
     return calendarListCache.calendars
   }
@@ -71,12 +88,41 @@ export interface EventsResult {
 // range fails so a flaky calendar does not blank out its events.
 const lastGood = new Map<string, { range: string; events: CalendarEvent[] }>()
 
+const ICS_TTL_MS = 10 * 60 * 1000
+const icsBodies = new Map<string, { at: number; body: string }>()
+
+async function fetchIcsCalendarEvents(
+  calendar: CalendarInfo,
+  timeMin: string,
+  timeMax: string,
+): Promise<CalendarEvent[]> {
+  const source = getIcsSources().find((s) => `${ICS_PREFIX}${s.id}` === calendar.id)
+  if (!source) return []
+  let cached = icsBodies.get(calendar.id)
+  if (!cached || Date.now() - cached.at > ICS_TTL_MS) {
+    try {
+      cached = { at: Date.now(), body: await fetchIcsBody(source.url) }
+      icsBodies.set(calendar.id, cached)
+    } catch (err) {
+      // serve the previous copy rather than blanking the calendar on a flaky feed
+      if (!cached) throw err
+    }
+  }
+  return parseIcsEvents(cached.body, { from: new Date(timeMin), to: new Date(timeMax) }, calendar.id)
+}
+
+export function forgetIcsCalendar(sourceId: string): void {
+  icsBodies.delete(`${ICS_PREFIX}${sourceId}`)
+  lastGood.delete(`${ICS_PREFIX}${sourceId}`)
+}
+
 async function fetchCalendarEvents(
   cal: calendar_v3.Calendar,
   calendar: CalendarInfo,
   timeMin: string,
   timeMax: string,
 ): Promise<CalendarEvent[]> {
+  if (calendar.id.startsWith(ICS_PREFIX)) return fetchIcsCalendarEvents(calendar, timeMin, timeMax)
   const readOnly = !canWrite(calendar.accessRole)
   const events: CalendarEvent[] = []
   let pageToken: string | undefined
@@ -106,6 +152,7 @@ export async function getEvents(timeMin: string, timeMax: string): Promise<Event
   } catch {
     allCalendars = [
       { id: 'primary', name: 'Primary', color: '#4285f4', primary: true, accessRole: 'owner' },
+      ...icsCalendars(),
     ]
   }
 
