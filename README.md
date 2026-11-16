@@ -36,8 +36,8 @@ Tap **Manage** to add or delete chores and lists. Limits: 20 lists, 200 items pe
 Besides Google Calendar you can subscribe to any read-only `.ics` feed (school or sports schedules, holidays, iCloud/Outlook "publish" links): open the menu (☰) → **Add calendar by URL**. `webcal://` links work. Feeds appear alongside your Google calendars (selectable, colored, usable with the person chips), recurring events are expanded, and feeds are refreshed every 10 minutes.
 
 - Read-only: events from feeds cannot be edited from the app. Local alerts still work.
-- Only `http(s)`/`webcal` URLs are fetched, with a 15 s timeout, a 5 MB streamed size limit and at most 3 redirects (each re-checked). The URL is checked when you add it. Up to 20 feeds; duplicates are rejected. Recurrence rules repeating more often than daily are ignored.
-- Private feed URLs often contain a secret token. They are stored in plain text in the app's local settings file (the same file that holds your preferences) and are never sent to the display layer, which only sees the name and color. Treat that file as sensitive: anyone with access to the Pi's user account can read it.
+- Only `http(s)`/`webcal` URLs are fetched, from the internet or your local network (a NAS, Home Assistant or a router-hosted calendar all work), with a 15 s timeout, a 5 MB streamed size limit and at most 3 redirects (each re-checked). The URL is checked when you add it. Up to 20 feeds; duplicates are rejected. Recurrence rules repeating more often than daily are ignored.
+- Private feed URLs often contain a secret token. They are encrypted with the operating system's secret store when one is available (see [Platform support and secret storage](#platform-support-and-secret-storage)) and are never sent to the display layer, which only sees the name and color. Without a secret store they are kept in plain text in the local settings file, which is readable only by the account running the app (mode 0600). Feeds added by an older version are encrypted the next time the app starts.
 
 ---
 
@@ -57,7 +57,7 @@ Dimming is a software overlay, so it works on any display without hardware backl
 
 After the idle delay the app shows a full-screen ambient screen: a large clock, date, weather and your next event, drifting a few pixels each minute to avoid burn-in. Tap anywhere to return. Reminders still appear on top of it.
 
-To show photos behind the clock, put `.jpg`, `.jpeg`, `.png` or `.webp` files in the photos folder. They are resized in the app, shown one at a time, and rotate every minute. Files over 30 MB are skipped.
+To show photos behind the clock, put `.jpg`, `.jpeg`, `.png` or `.webp` files in the photos folder. They are resized in the app, shown one at a time, and rotate every minute. Files over 30 MB, images over 40 megapixels, and anything that is not a regular file are skipped.
 
 - Recommended: set `PHOTO_DIR=/path/to/photos` in your `.env` (restart the app after changing it)
 - Default if unset: a `photos` folder inside the app's Electron user-data directory (under `~/.config/` on Linux; the exact name depends on how the app was built)
@@ -83,6 +83,34 @@ With no photos the screensaver is a plain black screen with the clock.
 | Raspberry Pi OS | 64-bit Desktop recommended |
 | Google account | for Calendar API |
 | OpenWeatherMap account | free tier |
+
+---
+
+## Platform support and secret storage
+
+| Platform | Status |
+|---|---|
+| Raspberry Pi OS / Debian / Ubuntu (arm64, armv7l, x64) | Supported. Build with `npm run build:linux:arm64`, `build:linux:armv7l` or `build:linux:x64` |
+| macOS, Windows | Development and use; not packaged by the scripts here |
+| Android | **Not supported.** The app is built on Electron, which does not run on Android. See the note below |
+
+Google tokens and ICS feed URLs are protected by the OS secret store through Electron's `safeStorage`:
+
+| OS | Backing store | Protected? |
+|---|---|---|
+| macOS | Keychain | Yes |
+| Windows | DPAPI | Yes |
+| Linux with GNOME Keyring or another libsecret service | libsecret | Yes |
+| Linux with KDE Wallet | kwallet / kwallet5 / kwallet6 | Yes |
+| Linux with no keyring (typical for Raspberry Pi OS Lite or an autostarted kiosk session) | none | **No**: secrets are stored as plain text in the settings file, mode 0600 (owner only). The app logs a warning at startup |
+
+Electron itself reports encryption as "available" on Linux without a keyring and then uses a hardcoded key; the app treats that as unprotected rather than pretending otherwise.
+
+To get real protection on Linux, install a keyring and make sure it is unlocked in the session that runs the app, for example `sudo apt install gnome-keyring libsecret-1-0`. If the keyring is locked or missing when the app starts, a stored encrypted feed URL cannot be read: the feed stays listed with a sync error and can be removed and re-added. Existing plain-text feed URLs are encrypted automatically once a keyring is available; a saved Google token is re-protected the next time it refreshes.
+
+The settings file is `pi-calendar.json` in the app's user-data directory (under `~/.config/` on Linux).
+
+**Android:** use the same Google Calendar in Google's own Calendar app. A native Android client would have to be a separate app (for example a web app or a Capacitor wrapper) with its own sign-in and storage, because this one depends on Electron's main process for OAuth, token storage and feed fetching. It is not part of this project today.
 
 ---
 
@@ -276,6 +304,6 @@ src/
 | State | Zustand |
 | Date math | date-fns |
 | Google API | googleapis (main process only) |
-| Storage | electron-store + safeStorage |
+| Storage | electron-store (mode 0600) + safeStorage |
 | Sound | Howler.js |
 | Weather | OpenWeatherMap REST API |

@@ -11,6 +11,8 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "build:linux:arm64": "npm run build && electron-builder --linux --arm64",
+    "build:linux:armv7l": "npm run build && electron-builder --linux --armv7l",
+    "build:linux:x64": "npm run build && electron-builder --linux --x64",
     "build:pi": "npm run build && electron-builder --linux --dir",
     "test": "vitest run --passWithNoTests"
   },
