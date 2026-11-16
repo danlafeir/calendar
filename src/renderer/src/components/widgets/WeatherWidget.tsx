@@ -1,6 +1,6 @@
 import { useWeatherStore } from '@renderer/store/useWeatherStore'
 
-function conditionEmoji(code: number): string {
+export function conditionEmoji(code: number): string {
   if (code >= 200 && code < 300) return '⛈'
   if (code >= 300 && code < 400) return '🌦'
   if (code >= 500 && code < 600) return '🌧'

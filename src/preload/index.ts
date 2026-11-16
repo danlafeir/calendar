@@ -8,6 +8,7 @@ const api: ElectronAPI = {
   updateEvent: (event) => ipcRenderer.invoke(IPC_CHANNELS.CALENDAR_UPDATE_EVENT, event),
   deleteEvent: (params) => ipcRenderer.invoke(IPC_CHANNELS.CALENDAR_DELETE_EVENT, params),
   getCalendars: () => ipcRenderer.invoke(IPC_CHANNELS.CALENDAR_GET_CALENDARS),
+  getNextPhoto: () => ipcRenderer.invoke(IPC_CHANNELS.PHOTO_NEXT),
   getAppSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET),
   updateAppSettings: (patch) => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_UPDATE, patch),
   setVisibleRange: (range) => ipcRenderer.invoke(IPC_CHANNELS.CALENDAR_SET_RANGE, range),

@@ -5,6 +5,9 @@ import { useCalendarSync, useVisibleRangeSync } from '@renderer/hooks/useCalenda
 import { useNotifications } from '@renderer/hooks/useNotifications'
 import { NavBar } from '@renderer/components/NavBar'
 import { AuthScreen } from '@renderer/components/AuthScreen'
+import { AmbientScreen } from '@renderer/components/AmbientScreen'
+import { useIdle } from '@renderer/hooks/useIdle'
+import { useSettingsStore } from '@renderer/store/useSettingsStore'
 import { NightDim } from '@renderer/components/NightDim'
 import { Drawer } from '@renderer/components/Drawer'
 import { WeekView } from '@renderer/views/WeekView'
@@ -33,6 +36,8 @@ export function App() {
   useCalendarSync(authState === 'authenticated')
   useVisibleRangeSync(authState === 'authenticated')
   useNotifications()
+  const idleTimeoutMin = useSettingsStore((s) => s.prefs.idleTimeoutMin)
+  const { idle, wake } = useIdle(authState === 'authenticated' ? idleTimeoutMin : 0)
 
   if (authState === 'checking') {
     return (
@@ -60,6 +65,7 @@ export function App() {
       <EventModal />
       <ConfirmDeleteModal />
       <NotificationModal />
+      {idle && <AmbientScreen onWake={wake} />}
       <NightDim />
     </div>
   )

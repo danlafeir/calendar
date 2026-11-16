@@ -5,6 +5,7 @@ import { getEvents, createEvent, updateEvent, deleteEvent, getCalendars, clearCa
 import { defaultRange, unionRange, rangesEqual, type SyncRange } from './syncRange'
 import { getWeather, fetchAndCache } from './weather'
 import { getNotifyConfig, setNotifyConfig, getSettings, getSelectedCalendarIds, setSelectedCalendarIds, pruneNotifyConfigs, getAppSettings, updateAppSettings } from './store'
+import { getNextPhoto } from './photos'
 import { sanitizeSettingsPatch } from './settingsValidation'
 import { updateEventCache, startScheduler } from './notifications'
 
@@ -72,6 +73,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     setSelectedCalendarIds(ids)
     await syncCalendar(mainWindow)
   })
+
+  ipcMain.handle(IPC_CHANNELS.PHOTO_NEXT, () => getNextPhoto())
 
   ipcMain.handle(IPC_CHANNELS.SETTINGS_GET, () => getAppSettings())
 

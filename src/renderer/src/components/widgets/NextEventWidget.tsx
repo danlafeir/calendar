@@ -3,7 +3,7 @@ import { parseISO, isAfter, isBefore, endOfDay, differenceInMinutes, format } fr
 import { useCalendarStore } from '@renderer/store/useCalendarStore'
 import type { CalendarEvent } from '@renderer/types'
 
-function getNextEvent(events: CalendarEvent[]): CalendarEvent | null {
+export function getNextEvent(events: CalendarEvent[]): CalendarEvent | null {
   const now = new Date()
   const eod = endOfDay(now)
   return (
@@ -17,7 +17,7 @@ function getNextEvent(events: CalendarEvent[]): CalendarEvent | null {
   )
 }
 
-function formatCountdown(minutesUntil: number): string {
+export function formatCountdown(minutesUntil: number): string {
   if (minutesUntil < 1) return 'now'
   if (minutesUntil < 60) return `${minutesUntil}m`
   const hours = Math.floor(minutesUntil / 60)

@@ -31,6 +31,17 @@ Open the menu (☰) and scroll to the bottom of the drawer. Settings are stored 
 
 Dimming is a software overlay, so it works on any display without hardware backlight access.
 
+### Screensaver and photos
+
+After the idle delay the app shows a full-screen ambient screen: a large clock, date, weather and your next event, drifting a few pixels each minute to avoid burn-in. Tap anywhere to return. Reminders still appear on top of it.
+
+To show photos behind the clock, put `.jpg`, `.jpeg`, `.png` or `.webp` files in the photos folder. They are resized in the app, shown one at a time, and rotate every minute. Files over 30 MB are skipped.
+
+- Default folder: `~/.config/pi-calendar/photos` on Linux (the app's user-data folder + `/photos`)
+- Override with `PHOTO_DIR=/path/to/photos` in your `.env`
+
+With no photos the screensaver is a plain black screen with the clock.
+
 ---
 
 ## Sync behavior

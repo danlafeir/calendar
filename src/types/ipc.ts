@@ -97,6 +97,7 @@ export const IPC_CHANNELS = {
   NOTIFICATION_REMINDER: 'notification:reminder',
   CALENDAR_SYNCED: 'calendar:synced',
   CALENDAR_SET_RANGE: 'calendar:setRange',
+  PHOTO_NEXT: 'photo:next',
   SETTINGS_GET: 'settings:get',
   SETTINGS_UPDATE: 'settings:update',
   WEATHER_UPDATED: 'weather:updated',
@@ -108,6 +109,7 @@ export interface ElectronAPI {
   updateEvent: (event: CalendarEvent) => Promise<CalendarEvent>
   deleteEvent: (params: { id: string; calendarId: string }) => Promise<void>
   getCalendars: () => Promise<CalendarInfo[]>
+  getNextPhoto: () => Promise<string | null>
   getAppSettings: () => Promise<AppSettings>
   updateAppSettings: (patch: Partial<AppSettings>) => Promise<AppSettings>
   setVisibleRange: (range: { timeMin: string; timeMax: string }) => Promise<void>
