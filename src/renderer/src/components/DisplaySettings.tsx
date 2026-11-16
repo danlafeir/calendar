@@ -1,3 +1,4 @@
+import { useWeatherStore } from '@renderer/store/useWeatherStore'
 import { ipc } from '@renderer/lib/ipc'
 import { useSettingsStore } from '@renderer/store/useSettingsStore'
 import type { AppSettings } from '@renderer/types'
@@ -52,14 +53,40 @@ function Chips<T extends number>({
 export function DisplaySettings() {
   const prefs = useSettingsStore((s) => s.prefs)
   const setPrefs = useSettingsStore((s) => s.setPrefs)
+  const setWeather = useWeatherStore((s) => s.setWeather)
 
   const update = (patch: Partial<AppSettings>) => {
     setPrefs({ ...prefs, ...patch })
     ipc().updateAppSettings(patch).then(setPrefs).catch(console.error)
+    if (patch.units) {
+      ipc().getWeather().then((w) => w && setWeather(w)).catch(() => {})
+    }
   }
 
   return (
     <div style={{ marginTop: 24, borderTop: '1px solid var(--color-border)', paddingTop: 16 }}>
+      <div style={labelStyle}>Temperature</div>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+        {(['imperial', 'metric'] as const).map((u) => (
+          <button
+            key={u}
+            onClick={() => update({ units: u })}
+            style={{
+              padding: '8px 12px',
+              minHeight: 40,
+              borderRadius: 'var(--radius-md)',
+              fontSize: 13,
+              border: '1px solid',
+              borderColor: prefs.units === u ? 'var(--color-primary)' : 'var(--color-border)',
+              color: prefs.units === u ? 'var(--color-primary)' : 'var(--color-text-muted)',
+              backgroundColor: prefs.units === u ? 'var(--color-primary-dim)' : 'transparent',
+            }}
+          >
+            {u === 'imperial' ? '°F' : '°C'}
+          </button>
+        ))}
+      </div>
+
       <div style={labelStyle}>Screensaver after</div>
       <Chips
         options={IDLE_OPTIONS}

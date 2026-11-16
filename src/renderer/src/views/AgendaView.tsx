@@ -6,6 +6,7 @@ import { useTouchGestures } from '@renderer/hooks/useTouchGestures'
 import { AGENDA_DAYS } from '@renderer/lib/viewRange'
 import { compareForDay, occursOnDay } from '@renderer/lib/eventSpan'
 import { formatEventTime } from '@renderer/lib/dateUtils'
+import { DayWeather } from '@renderer/components/widgets/DayWeather'
 import { eventColor } from '@renderer/lib/eventColor'
 import { useSettingsStore } from '@renderer/store/useSettingsStore'
 import { eventKey } from '@renderer/types'
@@ -33,7 +34,7 @@ export function AgendaView() {
           >
             <button
               onClick={() => openNewEvent(day)}
-              style={{ width: 90, flexShrink: 0, textAlign: 'left' }}
+              style={{ width: 120, flexShrink: 0, textAlign: 'left' }}
             >
               <div style={{ fontSize: 12, textTransform: 'uppercase', color: today ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
                 {format(day, 'EEE')}
@@ -42,6 +43,7 @@ export function AgendaView() {
                 {format(day, 'd')}
               </div>
               <div style={{ fontSize: 12, color: 'var(--color-text-faint)' }}>{format(day, 'MMM')}</div>
+              <DayWeather day={day} size={12} />
             </button>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
               {dayEvents.length === 0 && (

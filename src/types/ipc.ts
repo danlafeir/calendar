@@ -31,6 +31,15 @@ export function canWrite(accessRole: string): boolean {
   return accessRole === 'owner' || accessRole === 'writer'
 }
 
+export interface ForecastDay {
+  // YYYY-MM-DD in the weather location's timezone
+  date: string
+  high: number
+  low: number
+  conditionCode: number
+  condition: string
+}
+
 export interface WeatherData {
   temp: number
   feelsLike: number
@@ -40,6 +49,8 @@ export interface WeatherData {
   conditionCode: number
   iconCode: string
   city: string
+  units: 'imperial' | 'metric'
+  forecast: ForecastDay[]
   fetchedAt: number
 }
 

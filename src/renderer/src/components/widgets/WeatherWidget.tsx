@@ -84,7 +84,7 @@ export function WeatherWidget() {
       <div style={{ display: 'flex', gap: 12, fontSize: 11, color: 'var(--color-text-faint)', marginTop: 4 }}>
         <span>Feels {weather.feelsLike}°</span>
         <span>💧 {weather.humidity}%</span>
-        <span>💨 {weather.windSpeed} mph</span>
+        <span>💨 {weather.windSpeed} {weather.units === 'metric' ? 'm/s' : 'mph'}</span>
       </div>
     </div>
   )

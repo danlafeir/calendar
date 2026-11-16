@@ -10,6 +10,7 @@ import {
   totalGridHeight,
   PX_PER_MINUTE,
 } from '@renderer/lib/dateUtils'
+import { DayWeather } from '@renderer/components/widgets/DayWeather'
 import { eventColor, tint } from '@renderer/lib/eventColor'
 import { useSettingsStore } from '@renderer/store/useSettingsStore'
 import { occursOnDay } from '@renderer/lib/eventSpan'
@@ -145,6 +146,7 @@ export function WeekGrid() {
               >
                 {format(day, 'd')}
               </div>
+              <DayWeather day={day} />
             </div>
           ))}
         </div>

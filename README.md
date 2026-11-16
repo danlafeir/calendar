@@ -111,7 +111,7 @@ Before first launch you need a Google OAuth **Desktop App** client.
 - Search your city on [Google Maps](https://maps.google.com), right-click your location, and the first line of the context menu shows `lat, lon`
 - Or use [latlong.net](https://www.latlong.net)
 
-The weather widget displays in the top navigation bar showing the current temperature and condition (e.g. `☀️ 72°` / `clear sky`). Data is cached for 10 minutes. If the API key is missing or invalid, the widget is hidden rather than showing an error.
+The weather widget displays in the top navigation bar showing the current temperature and condition (e.g. `☀️ 72°` / `clear sky`). The 5-day forecast (daily high/low and conditions, from OpenWeatherMap's free `/forecast` endpoint) appears under each day in the week view and beside each day in the agenda view. Switch °F/°C in the menu drawer's display settings. Data is cached for 10 minutes. If the API key is missing or invalid, the widget is hidden rather than showing an error.
 
 ---
 
